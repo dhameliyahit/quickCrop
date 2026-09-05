@@ -21,13 +21,16 @@ async function loadPdfDoc(arrayBuffer) {
 /**
  * Extracts metadata (Order ID, SKU, Courier, Payment) from each order page
  */
-async function parsePdfMetadata(pdfDoc) {
+async function parsePdfMetadata(pdfDoc, onProgress) {
   const pagesData = [];
   const numPages = pdfDoc.numPages;
   // Default to standard right-aligned Flipkart layout (matches user red box)
   let detectedBox = { x: 165, y: 460, width: 265, height: 360 };
 
   for (let i = 1; i <= numPages; i++) {
+    if (typeof onProgress === 'function') {
+      onProgress(i, numPages);
+    }
     const page = await pdfDoc.getPage(i);
     const textContent = await page.getTextContent();
     const textItems = textContent.items.map((item) => item.str);

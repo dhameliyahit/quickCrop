@@ -531,6 +531,119 @@ a:hover {
 }
 
 /* ==========================================================================
+   Loading State (Animated Progress & Status)
+   ========================================================================== */
+.loading-state {
+  display: none;
+  margin-top: 1.5rem;
+  width: 100%;
+  animation: fadeIn 0.25s ease-out;
+}
+
+.loading-card {
+  background: #F8FAFC;
+  border: 1.5px solid #E2E8F0;
+  border-radius: var(--radius-md);
+  padding: 2.75rem 1.5rem;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--shadow-sm);
+}
+
+.loading-spinner-ring {
+  position: relative;
+  width: 64px;
+  height: 64px;
+  margin-bottom: 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.spinner-orbit {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 3.5px solid #E2E8F0;
+  border-top-color: var(--primary-blue);
+  border-right-color: #38BDF8;
+  animation: spinOrbit 0.9s cubic-bezier(0.55, 0.15, 0.45, 0.85) infinite;
+}
+
+.loading-icon-center {
+  color: var(--primary-blue);
+}
+
+@keyframes spinOrbit {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.loading-title {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: #0F172A;
+  margin-bottom: 0.35rem;
+}
+
+.loading-desc {
+  color: var(--text-muted);
+  font-size: 0.92rem;
+  margin-bottom: 1.25rem;
+  max-width: 480px;
+  line-height: 1.5;
+}
+
+.loading-progress-track {
+  width: 100%;
+  max-width: 380px;
+  height: 8px;
+  background: #E2E8F0;
+  border-radius: 50px;
+  overflow: hidden;
+  margin-bottom: 0.75rem;
+  position: relative;
+}
+
+.loading-progress-bar {
+  height: 100%;
+  width: 35%;
+  background: linear-gradient(90deg, #2874F0, #00D2FF, #2874F0);
+  background-size: 200% 100%;
+  border-radius: 50px;
+  animation: progressIndeterminate 1.4s ease-in-out infinite;
+  transition: width 0.25s ease;
+}
+
+@keyframes progressIndeterminate {
+  0% {
+    width: 20%;
+    margin-left: 0%;
+    background-position: 0% 0%;
+  }
+  50% {
+    width: 65%;
+    margin-left: 20%;
+    background-position: 100% 0%;
+  }
+  100% {
+    width: 30%;
+    margin-left: 70%;
+    background-position: 200% 0%;
+  }
+}
+
+.loading-status-text {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--primary-blue);
+  letter-spacing: 0.01em;
+}
+
+/* ==========================================================================
    Result Workspace
    ========================================================================== */
 .result-card {

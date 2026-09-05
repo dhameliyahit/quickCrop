@@ -28,6 +28,12 @@
   const orderCountDisplay = document.getElementById('order-count');
   const changeFileBtn = document.getElementById('btn-change-file');
 
+  const loadingState = document.getElementById('loading-state');
+  const loadingTitle = document.getElementById('loading-title');
+  const loadingDesc = document.getElementById('loading-desc');
+  const loadingStatus = document.getElementById('loading-status');
+  const loadingBar = document.getElementById('loading-progress-bar');
+
   const canvas = document.getElementById('pdf-canvas');
   const orderMetaDisplay = document.getElementById('order-meta-display');
 
@@ -41,6 +47,34 @@
   const btnDirectPrint = document.getElementById('btn-direct-print');
   const btnDownloadInvoices = document.getElementById('btn-download-invoices');
   const btnDownloadPng = document.getElementById('btn-download-png');
+
+  // Loading State Helpers
+  function showLoading(title, desc, status) {
+    if (loadingState) {
+      loadingState.style.display = 'block';
+      if (loadingTitle) loadingTitle.textContent = title || 'Processing Shipping Labels...';
+      if (loadingDesc) loadingDesc.textContent = desc || 'Scanning PDF pages and isolating thermal label boundaries.';
+      if (loadingStatus) loadingStatus.textContent = status || 'Reading vector data...';
+      if (loadingBar) {
+        loadingBar.style.animation = '';
+        loadingBar.style.width = '35%';
+      }
+    }
+    if (uploadArea) uploadArea.style.display = 'none';
+    if (resultCard) resultCard.style.display = 'none';
+  }
+
+  function updateLoadingProgress(statusText, percent) {
+    if (loadingStatus) loadingStatus.textContent = statusText;
+    if (loadingBar && typeof percent === 'number') {
+      loadingBar.style.animation = 'none';
+      loadingBar.style.width = `${Math.min(100, Math.max(8, percent))}%`;
+    }
+  }
+
+  function hideLoading() {
+    if (loadingState) loadingState.style.display = 'none';
+  }
 
   // Drag & Drop
   if (dropzone) {
@@ -87,6 +121,7 @@
       isImageMode = false;
       currentLabelBox = FLIPKART_LABEL_BOX;
       if (fileInput) fileInput.value = '';
+      hideLoading();
       resultCard.style.display = 'none';
       uploadArea.style.display = 'block';
     });
@@ -117,46 +152,61 @@
 
   // Process PDF Buffer
   async function processPdfBuffer(buffer, fileName) {
-    // Clone buffer so PDF.js worker transfer NEVER detaches currentPdfBytes!
-    const cleanBuffer = buffer.slice(0);
-    currentPdfBytes = new Uint8Array(cleanBuffer);
-    currentImageCropResult = null;
-    isImageMode = false;
+    try {
+      showLoading(`Processing ${fileName}...`, 'Analyzing document pages and isolating shipping labels...', 'Reading PDF streams...');
 
-    // Load with PDF.js using a separate clone
-    const pdfJsBuffer = buffer.slice(0);
-    currentPdfDocProxy = await loadPdfDoc(pdfJsBuffer);
-    pagesMetadata = await parsePdfMetadata(currentPdfDocProxy);
-    currentLabelBox = pagesMetadata.detectedBox || FLIPKART_LABEL_BOX;
+      // Clone buffer so PDF.js worker transfer NEVER detaches currentPdfBytes!
+      const cleanBuffer = buffer.slice(0);
+      currentPdfBytes = new Uint8Array(cleanBuffer);
+      currentImageCropResult = null;
+      isImageMode = false;
 
-    // Update File Banner
-    if (fileNameDisplay) fileNameDisplay.textContent = fileName;
-    if (fileSizeDisplay) fileSizeDisplay.textContent = (buffer.byteLength / 1024).toFixed(1) + ' KB';
-    if (orderCountDisplay) {
-      orderCountDisplay.textContent = `${pagesMetadata.length} Order${pagesMetadata.length > 1 ? 's' : ''} Ready`;
+      // Load with PDF.js using a separate clone
+      const pdfJsBuffer = buffer.slice(0);
+      currentPdfDocProxy = await loadPdfDoc(pdfJsBuffer);
+      
+      const totalPages = currentPdfDocProxy.numPages;
+      updateLoadingProgress(`Reading 1 of ${totalPages} pages...`, 15);
+
+      pagesMetadata = await parsePdfMetadata(currentPdfDocProxy, (current, total) => {
+        const pct = Math.round(15 + (current / total) * 75);
+        updateLoadingProgress(`Scanning order ${current} of ${total}...`, pct);
+      });
+
+      currentLabelBox = pagesMetadata.detectedBox || FLIPKART_LABEL_BOX;
+
+      updateLoadingProgress('Formatting thermal label preview...', 95);
+
+      // Update File Banner
+      if (fileNameDisplay) fileNameDisplay.textContent = fileName;
+      if (fileSizeDisplay) fileSizeDisplay.textContent = (buffer.byteLength / 1024).toFixed(1) + ' KB';
+      if (orderCountDisplay) {
+        orderCountDisplay.textContent = `${pagesMetadata.length} Order${pagesMetadata.length > 1 ? 's' : ''} Ready`;
+      }
+
+      if (btnDownloadInvoices) btnDownloadInvoices.style.display = 'inline-flex';
+      if (btnDownloadPng) btnDownloadPng.style.display = 'none';
+
+      hideLoading();
+      resultCard.style.display = 'block';
+
+      currentPage = 1;
+      updatePaginationUI();
+      renderCurrentPage();
+
+      resultCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } catch (err) {
+      console.error('Processing error:', err);
+      hideLoading();
+      uploadArea.style.display = 'block';
+      alert('Error processing PDF: ' + err.message);
     }
-
-    if (btnDownloadInvoices) btnDownloadInvoices.style.display = 'inline-flex';
-    if (btnDownloadPng) btnDownloadPng.style.display = 'none';
-
-    uploadArea.style.display = 'none';
-    resultCard.style.display = 'block';
-
-    currentPage = 1;
-    updatePaginationUI();
-    renderCurrentPage();
-
-    resultCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
   // Process Image File
   async function processImageFile(file) {
     try {
-      uploadArea.style.display = 'none';
-      resultCard.style.display = 'block';
-      if (fileNameDisplay) fileNameDisplay.textContent = file.name;
-      if (fileSizeDisplay) fileSizeDisplay.textContent = (file.size / 1024).toFixed(1) + ' KB';
-      if (orderCountDisplay) orderCountDisplay.textContent = '1 Cropped Label Ready';
+      showLoading(`Processing ${file.name}...`, 'Extracting Flipkart shipping label from image...', 'Cropping label...');
 
       const result = await cropFlipkartLabelImage(file);
       currentImageCropResult = result;
@@ -167,6 +217,10 @@
         sku: 'Flipkart Order',
         pageIndex: 0,
       }];
+
+      if (fileNameDisplay) fileNameDisplay.textContent = file.name;
+      if (fileSizeDisplay) fileSizeDisplay.textContent = (file.size / 1024).toFixed(1) + ' KB';
+      if (orderCountDisplay) orderCountDisplay.textContent = '1 Cropped Label Ready';
 
       if (stepperRow) stepperRow.style.display = 'none';
       if (btnDownloadInvoices) btnDownloadInvoices.style.display = 'none';
@@ -184,12 +238,14 @@
         orderMetaDisplay.textContent = '100% Cropped Shipping Label';
       }
 
+      hideLoading();
+      resultCard.style.display = 'block';
       resultCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
     } catch (err) {
       console.error(err);
-      alert('Error processing image: ' + err.message);
-      resultCard.style.display = 'none';
+      hideLoading();
       uploadArea.style.display = 'block';
+      alert('Error processing image: ' + err.message);
     }
   }
 
