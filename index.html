@@ -11,68 +11,148 @@
 
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>QuickCrop | Free Shipping Label Crop Tool for Flipkart & Marketplaces</title>
-    <meta name="description" content="QuickCrop is the free, client-side shipping label crop tool for Indian online sellers. Crop Flipkart shipping labels for 4x6 thermal barcode printers in 1-click. Meesho and Amazon tools launching soon." />
-    <meta name="keywords" content="QuickCrop, Flipkart Shipping Label Crop, Flipkart label cropper, Meesho label cropper, shipping label crop tool, thermal printer 4x6 label, ekart logistics label, amazon easy ship cropper" />
-    <link rel="canonical" href="https://quickcrop.in/" />
+    <title>Flipkart Label Crop Tool | QuickLabelCrop (QuickCrop) - Free 4x6 Thermal Cropper</title>
+    <meta name="description" content="QuickLabelCrop is India's fastest 1-click Flipkart shipping label crop tool. Auto-crop 4x6 thermal barcode stickers from seller PDFs, remove invoices, sort by SKU, and print with zero barcode blur. 100% free & private." />
+    <meta name="keywords" content="flipkart label crop, quicklabelcrop, flipkart shipping label crop tool, flipkart label cropper, crop flipkart label online, flipkart label resize 4x6, ekart shipping label cropper, thermal printer 4x6 label, bulk flipkart label crop pdf, flipkart invoice and label separate, quickcrop, meesho label cropper, amazon easy ship cropper" />
+    <link rel="canonical" href="https://www.quickcrop.online/" />
 
-    <!-- Open Graph -->
+    <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://quickcrop.in/" />
-    <meta property="og:title" content="QuickCrop - Shipping Label Crop Tool" />
-    <meta property="og:description" content="1-Click shipping label cropper for Flipkart, Meesho, and Indian marketplaces. 100% free, private, and thermal ready." />
-    <meta property="og:image" content="https://quickcrop.in/assets/flipkart-logo.svg" />
+    <meta property="og:url" content="https://www.quickcrop.online/" />
+    <meta property="og:title" content="Flipkart Label Crop Tool | QuickLabelCrop - Free 4x6 Thermal Cropper" />
+    <meta property="og:description" content="1-Click shipping label cropper for Flipkart sellers. 100% free, client-side private, vector barcode clarity, and thermal 4x6 ready." />
+    <meta property="og:image" content="https://www.quickcrop.online/assets/icon-512.png" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:url" content="https://www.quickcrop.online/" />
+    <meta name="twitter:title" content="Flipkart Label Crop Tool | QuickLabelCrop (QuickCrop)" />
+    <meta name="twitter:description" content="Crop Flipkart shipping labels in 1 click for 4x6 thermal barcode printers. Free, private, and instant." />
+    <meta name="twitter:image" content="https://www.quickcrop.online/assets/icon-512.png" />
+
+    <!-- PWA & Mobile Web App Meta -->
+    <link rel="manifest" href="manifest.webmanifest" />
+    <meta name="theme-color" content="#2874F0" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="QuickLabelCrop" />
+    <link rel="apple-touch-icon" href="assets/icon-192.png" />
 
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="assets/logo.svg" />
+    <link rel="shortcut icon" href="assets/icon-192.png" />
 
     <!-- Stylesheet -->
     <link rel="stylesheet" href="css/style.css" />
 
-    <!-- JSON-LD Schema -->
+    <!-- JSON-LD Schema (SoftwareApplication, WebSite, FAQPage, HowTo) -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
       "@graph": [
         {
           "@type": "WebSite",
-          "name": "QuickCrop",
-          "url": "https://quickcrop.in/",
+          "@id": "https://www.quickcrop.online/#website",
+          "name": "QuickLabelCrop",
+          "alternateName": ["QuickCrop", "Quick Label Crop", "Flipkart Label Cropper"],
+          "url": "https://www.quickcrop.online/",
           "description": "Free client-side shipping label crop suite for Indian e-commerce sellers on Flipkart, Meesho, and Amazon."
         },
         {
           "@type": "SoftwareApplication",
-          "name": "QuickCrop Shipping Label Cropper",
-          "operatingSystem": "All modern browsers (Windows, Mac, Android, iOS)",
+          "@id": "https://www.quickcrop.online/#software",
+          "name": "QuickLabelCrop - Flipkart Shipping Label Crop Tool",
+          "operatingSystem": "All modern browsers (Windows, Mac, Linux, Android, iOS)",
           "applicationCategory": "BusinessApplication",
+          "applicationSubCategory": "EcommerceTool",
+          "url": "https://www.quickcrop.online/",
           "offers": { "@type": "Offer", "price": "0", "priceCurrency": "INR" },
-          "description": "Extracts thermal 4x6 shipping labels from marketplace order PDFs without server uploads or barcode blur."
+          "description": "Extracts thermal 4x6 shipping labels from Flipkart seller PDFs and images in 1-click without server uploads or barcode blur. Supports bulk multi-order PDFs, invoice separation, and SKU sorting.",
+          "featureList": [
+            "1-Click Flipkart Label Cropping",
+            "100% Client-Side Privacy (Zero Server Uploads)",
+            "Pure Vector Barcode Clarity",
+            "4x6 Thermal Printer Formatting (TSC, TVS, Xprinter, Zebra)",
+            "Separate Invoices PDF Download",
+            "Smart Warehouse SKU Batching",
+            "Progressive Web App (PWA) Offline & Desktop Install"
+          ]
+        },
+        {
+          "@type": "HowTo",
+          "name": "How to Crop Flipkart Shipping Labels Online for 4x6 Thermal Printers",
+          "description": "Step-by-step tutorial to crop Flipkart order labels, remove tax invoices, and print on thermal barcode printers.",
+          "step": [
+            {
+              "@type": "HowToStep",
+              "position": 1,
+              "name": "Download PDF from Flipkart Seller Hub",
+              "text": "Go to Flipkart Seller Hub > Orders > Active Orders and download your daily order PDF."
+            },
+            {
+              "@type": "HowToStep",
+              "position": 2,
+              "name": "Upload to QuickLabelCrop",
+              "text": "Drag and drop the PDF or label image into QuickLabelCrop."
+            },
+            {
+              "@type": "HowToStep",
+              "position": 3,
+              "name": "Download Cropped 4x6 Labels",
+              "text": "QuickLabelCrop automatically crops the exact shipping label box and isolates the invoice. Click Download to print on your thermal printer."
+            }
+          ]
         },
         {
           "@type": "FAQPage",
           "mainEntity": [
             {
               "@type": "Question",
-              "name": "Which marketplaces are supported by QuickCrop?",
+              "name": "What is QuickLabelCrop and how does it work?",
               "acceptedAnswer": {
                 "@type": "Answer",
-                "text": "The Flipkart Shipping Label Crop Tool is currently live and fully functional. Tools for Meesho and Amazon Easy Ship are under active development and launching next."
+                "text": "QuickLabelCrop (QuickCrop) is a free, instant shipping label cropper for Indian e-commerce sellers. It automatically detects and crops the shipping label box from Flipkart order PDFs, eliminates the bottom tax invoice, and formats the output into 4x6-inch dimensions for thermal barcode printers."
               }
             },
             {
               "@type": "Question",
-              "name": "How does QuickCrop crop Flipkart shipping labels?",
+              "name": "Is QuickLabelCrop free to use for unlimited Flipkart labels?",
               "acceptedAnswer": {
                 "@type": "Answer",
-                "text": "QuickCrop uses vector coordinate boundary extraction to crop the exact shipping label box from Flipkart seller PDFs, completely removing the tax invoice while preserving 100% vector barcode clarity."
+                "text": "Yes! QuickLabelCrop is 100% free with unlimited cropping. There are no subscriptions, credits, or registration requirements."
               }
             },
             {
               "@type": "Question",
-              "name": "Is QuickCrop safe and private?",
+              "name": "Are customer details and addresses private and secure?",
               "acceptedAnswer": {
                 "@type": "Answer",
-                "text": "Yes! All processing happens 100% inside your browser using JavaScript. No files or order details are ever sent across the internet."
+                "text": "Absolutely. QuickLabelCrop operates 100% client-side inside your browser using JavaScript. No files, customer phone numbers, or buyer addresses are ever sent to any remote server or stored in the cloud."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Will the EKart and courier barcodes scan without errors?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Yes. QuickLabelCrop performs pure vector coordinate boundary extraction on PDF files, ensuring 100% vector barcode clarity with zero compression or raster blurring. EKart, Delhivery, and Shadowfax scanners scan them instantly."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Can I install QuickLabelCrop as a desktop or mobile app?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Yes! QuickLabelCrop is a Progressive Web App (PWA). Simply click the 'Install App' button in the header or your browser menu to install it directly to your Windows desktop, Mac, Android, or iOS home screen for 1-click access."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "How does QuickLabelCrop compare to paid label cropping software?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Unlike paid software that charges ₹500 to ₹2,000 annually or uploads sensitive PDFs to cloud servers, QuickLabelCrop is 100% free, processes orders locally in under 0.5 seconds, protects customer privacy, and includes built-in SKU sorting."
               }
             }
           ]
@@ -101,16 +181,26 @@
                 <path d="M14.8 14.8 20 20"></path>
               </svg>
             </div>
-            <span>QuickCrop</span>
+            <span>QuickLabelCrop</span>
           </a>
         </div>
 
         <ul class="header-nav">
           <li><a href="#marketplaces" class="active">Marketplaces</a></li>
           <li><a href="flipkart-shipping-label-crop-tool/">Flipkart Tool</a></li>
+          <li><a href="#comparison-matrix">vs Competitors</a></li>
           <li><a href="blogs/">Guides & Blogs</a></li>
-          <li><a href="#comparison">Before vs After</a></li>
           <li><a href="#faq">FAQ</a></li>
+          <li>
+            <button class="btn-install-pwa" type="button" aria-label="Install QuickLabelCrop App">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="7 10 12 15 17 10"></polyline>
+                <line x1="12" y1="15" x2="12" y2="3"></line>
+              </svg>
+              <span>Install App</span>
+            </button>
+          </li>
           <li><a href="flipkart-shipping-label-crop-tool/" class="btn-nav-action">Crop Flipkart Labels →</a></li>
         </ul>
       </div>
@@ -118,10 +208,11 @@
       <!-- Mobile Quick Nav -->
       <nav class="mobile-nav-bar" aria-label="Mobile Navigation">
         <div class="mobile-nav-inner">
+          <button class="mobile-nav-link btn-install-pwa" type="button" style="border: none; cursor: pointer; color: #1E40AF !important; background: #FFFFFF; font-weight: 700; border-radius: 4px; padding: 0.25rem 0.65rem; margin-right: 0.35rem;">📲 Install App</button>
           <a href="#marketplaces" class="mobile-nav-link active">Marketplaces</a>
           <a href="flipkart-shipping-label-crop-tool/" class="mobile-nav-link">Flipkart Tool</a>
+          <a href="#comparison-matrix" class="mobile-nav-link">vs Competitors</a>
           <a href="blogs/" class="mobile-nav-link">Guides</a>
-          <a href="#comparison" class="mobile-nav-link">Before/After</a>
           <a href="#faq" class="mobile-nav-link">FAQ</a>
         </div>
       </nav>
@@ -131,15 +222,21 @@
     <section class="hero-wrapper">
       <div class="hero-content">
         <div class="hero-badge">
-          <span>⚡ 100% Free • Client-Side Privacy</span>
+          <span>⚡ 100% Free • Client-Side Privacy • QuickLabelCrop</span>
         </div>
         <h1 class="hero-title">
-          Crop E-Commerce Shipping Labels <br />
+          Crop Flipkart Shipping Labels <br />
           <span class="gradient-text">In One Instant Click</span>
         </h1>
         <p class="hero-sub">
-          Transform messy, full-page marketplace invoices into sharp, scan-ready 4x6 thermal shipping labels. Designed for high-volume sellers in India.
+          QuickLabelCrop (QuickCrop) transforms cluttered Flipkart seller PDFs and images into sharp, scan-ready 4x6" thermal shipping labels. 100% free forever, zero server uploads, and instant vector barcode clarity.
         </p>
+        <div>
+          <button class="hero-install-pill" id="hero-install-pill" type="button" aria-label="Install QuickLabelCrop Web App">
+            <span class="pulse-dot"></span>
+            <span>📲 Install Web App for 1-Click Access</span>
+          </button>
+        </div>
       </div>
 
       <!-- Marketplace Selector Grid -->
@@ -379,9 +476,142 @@
         </div>
       </section>
 
+      <!-- Competitor Comparison Section -->
+      <section class="comparison-matrix-section" id="comparison-matrix">
+        <div class="comparison-header">
+          <span class="status-badge badge-success" style="margin-bottom: 0.5rem;">⭐ Unmatched Speed & Privacy</span>
+          <h2 class="info-title">QuickLabelCrop vs Other Croppers & Methods</h2>
+          <p style="color: #64748B;">
+            See why Indian sellers choose QuickLabelCrop (QuickCrop) over paid desktop utilities and unsecure online tools:
+          </p>
+        </div>
+
+        <div class="comparison-matrix-wrapper">
+          <table class="comparison-matrix-table">
+            <thead>
+              <tr>
+                <th style="width: 28%;">Feature / Capability</th>
+                <th class="col-quickcrop" style="width: 26%;">
+                  ⚡ QuickLabelCrop <br /><small style="font-weight: 700; color: #15803D;">(100% Free & Private)</small>
+                </th>
+                <th style="width: 23%;">Other Online Croppers</th>
+                <th style="width: 23%;">Paid Software / Manual</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Customer Data Privacy</strong><br /><small style="color: #64748B;">Processing location</small></td>
+                <td class="col-quickcrop">
+                  <span class="status-badge badge-success">✓ 100% Client-Side</span><br />
+                  <small style="color: #15803D;">Zero files ever uploaded to servers</small>
+                </td>
+                <td>
+                  <span class="status-badge badge-danger">✕ Server Upload</span><br />
+                  <small style="color: #64748B;">PDFs sent to 3rd-party cloud</small>
+                </td>
+                <td>
+                  <span class="status-badge badge-neutral">Manual Cut / Local .exe</span><br />
+                  <small style="color: #64748B;">Risk of untrusted executable</small>
+                </td>
+              </tr>
+              <tr>
+                <td><strong>Pricing & Limits</strong><br /><small style="color: #64748B;">Cost per order crop</small></td>
+                <td class="col-quickcrop">
+                  <span class="status-badge badge-success">✓ 100% Free Forever</span><br />
+                  <small style="color: #15803D;">Unlimited crops & orders</small>
+                </td>
+                <td>
+                  <span class="status-badge badge-warning">⚠ Freemium / Credits</span><br />
+                  <small style="color: #64748B;">Daily limit or pay per label</small>
+                </td>
+                <td>
+                  <span class="status-badge badge-danger">✕ Expensive</span><br />
+                  <small style="color: #64748B;">₹500 - ₹2,000 / year</small>
+                </td>
+              </tr>
+              <tr>
+                <td><strong>EKart Barcode Clarity</strong><br /><small style="color: #64748B;">Scan reliability</small></td>
+                <td class="col-quickcrop">
+                  <span class="status-badge badge-success">✓ Pure Vector PDF</span><br />
+                  <small style="color: #15803D;">Zero compression, instant courier scan</small>
+                </td>
+                <td>
+                  <span class="status-badge badge-warning">⚠ Rasterized Blurry Image</span><br />
+                  <small style="color: #64748B;">Pickup rejection risks</small>
+                </td>
+                <td>
+                  <span class="status-badge badge-neutral">Varies</span><br />
+                  <small style="color: #64748B;">Depends on print driver</small>
+                </td>
+              </tr>
+              <tr>
+                <td><strong>Processing Speed</strong><br /><small style="color: #64748B;">Time for 100 orders</small></td>
+                <td class="col-quickcrop">
+                  <span class="status-badge badge-success">✓ Under 0.5 Seconds</span><br />
+                  <small style="color: #15803D;">Instant in-browser rendering</small>
+                </td>
+                <td>
+                  <span class="status-badge badge-danger">✕ 30 - 60 Seconds</span><br />
+                  <small style="color: #64748B;">Slow upload & cloud queue</small>
+                </td>
+                <td>
+                  <span class="status-badge badge-danger">✕ 10 - 20 Minutes</span><br />
+                  <small style="color: #64748B;">Manual scissors / snipping tool</small>
+                </td>
+              </tr>
+              <tr>
+                <td><strong>Separate GST Invoices</strong><br /><small style="color: #64748B;">Accounting support</small></td>
+                <td class="col-quickcrop">
+                  <span class="status-badge badge-success">✓ 1-Click Invoice Download</span><br />
+                  <small style="color: #15803D;">Separates invoices into clean PDF</small>
+                </td>
+                <td>
+                  <span class="status-badge badge-danger">✕ Invoices Discarded</span><br />
+                  <small style="color: #64748B;">Tax invoices lost</small>
+                </td>
+                <td>
+                  <span class="status-badge badge-neutral">Manual</span><br />
+                  <small style="color: #64748B;">Manual page-by-page sorting</small>
+                </td>
+              </tr>
+              <tr>
+                <td><strong>Smart SKU Grouping</strong><br /><small style="color: #64748B;">Warehouse packing speed</small></td>
+                <td class="col-quickcrop">
+                  <span class="status-badge badge-success">✓ Built-in Auto SKU Sort</span><br />
+                  <small style="color: #15803D;">3x faster picking & packing</small>
+                </td>
+                <td>
+                  <span class="status-badge badge-danger">✕ Not Available</span><br />
+                  <small style="color: #64748B;">Random order print sequence</small>
+                </td>
+                <td>
+                  <span class="status-badge badge-danger">✕ Manual Matching</span><br />
+                  <small style="color: #64748B;">Prone to shipping errors</small>
+                </td>
+              </tr>
+              <tr>
+                <td><strong>Web App (PWA) Install</strong><br /><small style="color: #64748B;">Desktop & Mobile</small></td>
+                <td class="col-quickcrop">
+                  <span class="status-badge badge-success">✓ 1-Click App Install</span><br />
+                  <small style="color: #15803D;">Works on Windows, Mac, Android, iOS</small>
+                </td>
+                <td>
+                  <span class="status-badge badge-danger">✕ Browser Only</span><br />
+                  <small style="color: #64748B;">No offline or desktop app</small>
+                </td>
+                <td>
+                  <span class="status-badge badge-warning">⚠ Heavy Desktop .exe</span><br />
+                  <small style="color: #64748B;">Windows only, requires install</small>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
       <!-- Why QuickCrop Features Section -->
       <section class="info-section">
-        <h2 class="info-title">Why Indian Sellers Rely on QuickCrop</h2>
+        <h2 class="info-title">Why Indian Sellers Rely on QuickLabelCrop</h2>
         <div class="blog-cards-grid">
           <div class="blog-item">
             <div>
@@ -472,20 +702,28 @@
         <h2 class="info-title">Frequently Asked Questions</h2>
         <div class="faq-box">
           <div class="faq-row">
-            <div class="faq-q">What marketplaces does QuickCrop support?</div>
-            <div class="faq-a">QuickCrop currently supports Flipkart shipping labels with full vector cropping and SKU grouping. Support for Meesho and Amazon Easy Ship is in development and releasing soon.</div>
+            <div class="faq-q">What makes QuickLabelCrop the best tool for Flipkart label crop?</div>
+            <div class="faq-a">QuickLabelCrop is built specifically for Indian online sellers. It provides 100% client-side privacy (no files ever uploaded), zero loss in vector barcode sharpness, instant 1-click cropping for multi-order PDFs, automated SKU sorting for fast order picking, and 1-click separate invoice extraction for GST filing.</div>
           </div>
           <div class="faq-row">
-            <div class="faq-q">Is QuickCrop completely free?</div>
-            <div class="faq-a">Yes, QuickCrop is 100% free with unlimited crops. There are no paid tiers, no watermarks, and no registration required.</div>
+            <div class="faq-q">Is QuickLabelCrop completely free?</div>
+            <div class="faq-a">Yes, QuickLabelCrop (QuickCrop) is 100% free forever with unlimited crops. There are no subscriptions, no per-label fees, no watermarks, and no registration required.</div>
+          </div>
+          <div class="faq-row">
+            <div class="faq-q">How do I install QuickLabelCrop as a Web App on PC or Mobile?</div>
+            <div class="faq-a">Simply click the <strong>"Install App"</strong> button in our navigation header or the <strong>"Install Web App"</strong> button in the hero. On Chrome/Edge, click the install icon (⊕) in your address bar. On Android, tap the three dots and select "Install app". On iPhone/iPad, tap Share and select "Add to Home Screen".</div>
+          </div>
+          <div class="faq-row">
+            <div class="faq-q">Will EKart and Delhivery barcode scanners scan cropped labels?</div>
+            <div class="faq-a">Yes, 100%! QuickLabelCrop extracts original vector coordinate boundaries rather than taking low-resolution screenshots. Courier pickup agents will be able to scan your barcodes and QR codes instantly without scan errors.</div>
           </div>
           <div class="faq-row">
             <div class="faq-q">Where is the dedicated Flipkart tool page located?</div>
-            <div class="faq-a">You can access the dedicated Flipkart shipping label cropper directly at <a href="flipkart-shipping-label-crop-tool/">/flipkart-shipping-label-crop-tool/</a>.</div>
+            <div class="faq-a">You can access the dedicated Flipkart shipping label cropper directly at <a href="flipkart-shipping-label-crop-tool/">/flipkart-shipping-label-crop-tool/</a> with specialized thermal printer settings.</div>
           </div>
           <div class="faq-row">
             <div class="faq-q">Can I separate invoices from shipping labels?</div>
-            <div class="faq-a">Yes! QuickCrop gives you options to download only the cropped shipping labels, or download separate invoices into their own clean PDF file for GST accounting.</div>
+            <div class="faq-a">Yes! QuickLabelCrop provides an instant button to download separate invoices into their own clean PDF file for your monthly GST accounting while printing your 4x6 labels.</div>
           </div>
         </div>
       </section>
@@ -495,12 +733,12 @@
     <footer class="site-footer">
       <div class="footer-inner">
         <div class="footer-col">
-          <h5>QuickCrop</h5>
+          <h5>QuickLabelCrop</h5>
           <p style="line-height: 1.6; margin-bottom: 0.8rem;">
             The fast, 100% free, client-side shipping label cropper for Indian e-commerce sellers on Flipkart, Meesho, and Amazon.
           </p>
           <p style="font-size: 0.75rem; color: #64748B;">
-            Disclaimer: QuickCrop is an independent utility and is not affiliated with Flipkart, Meesho, or Amazon.
+            Disclaimer: QuickLabelCrop (QuickCrop) is an independent seller utility and is not affiliated with Flipkart, Meesho, or Amazon.
           </p>
         </div>
 
@@ -526,8 +764,8 @@
       </div>
 
       <div class="footer-bottom-bar">
-        <div>© 2026 QuickCrop. All Rights Reserved.</div>
-        <div>100% Client-Side Privacy • Zero Server Latency</div>
+        <div>© 2026 QuickLabelCrop (QuickCrop). All Rights Reserved.</div>
+        <div>100% Client-Side Privacy • Zero Server Latency • PWA Enabled</div>
       </div>
     </footer>
 
@@ -540,5 +778,6 @@
     <script src="js/pdf-cropper.js"></script>
     <script src="js/pdf-parser.js"></script>
     <script src="js/app.js"></script>
+    <script src="js/pwa.js"></script>
   </body>
 </html>

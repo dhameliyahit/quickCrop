@@ -1,0 +1,52 @@
+{
+  "name": "QuickLabelCrop - Flipkart Shipping Label Cropper",
+  "short_name": "QuickLabelCrop",
+  "description": "Free 1-click shipping label cropper for Flipkart sellers. Fast 4x6 thermal barcode stickers with zero quality loss and 100% client-side privacy.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#F1F3F6",
+  "theme_color": "#2874F0",
+  "orientation": "any",
+  "categories": ["business", "utilities", "productivity"],
+  "icons": [
+    {
+      "src": "/assets/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/assets/app-icon.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Flipkart Tool",
+      "short_name": "Flipkart",
+      "description": "Crop Flipkart order shipping labels instantly",
+      "url": "/flipkart-shipping-label-crop-tool/",
+      "icons": [
+        {
+          "src": "/assets/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    }
+  ]
+}
