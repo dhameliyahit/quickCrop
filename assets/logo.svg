@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 50" width="240" height="50" fill="none">
+  <!-- Brand Icon -->
+  <rect x="2" y="5" width="40" height="40" rx="10" fill="url(#brandGrad)" />
+  <!-- Shipping Box with crop lines -->
+  <path d="M12 16L22 10L32 16L22 22L12 16Z" stroke="#FFFFFF" stroke-width="2" stroke-linejoin="round"/>
+  <path d="M12 16V28L22 34V22" stroke="#FFFFFF" stroke-width="2" stroke-linejoin="round"/>
+  <path d="M32 16V28L22 34" stroke="#FFFFFF" stroke-width="2" stroke-linejoin="round"/>
+  <!-- Crop Scissor Marks -->
+  <circle cx="28" cy="31" r="2.5" fill="#FFE500"/>
+  <circle cx="34" cy="27" r="2.5" fill="#FFE500"/>
+  <line x1="26" y1="33" x2="36" y2="25" stroke="#FFE500" stroke-width="1.5" stroke-dasharray="2 1"/>
+
+  <!-- Brand Typography -->
+  <text x="52" y="29" font-family="'Plus Jakarta Sans', -apple-system, sans-serif" font-size="22" font-weight="800" fill="currentColor">
+    Quick<tspan fill="#2874F0">Crop</tspan>
+  </text>
+  <text x="53" y="42" font-family="'Inter', sans-serif" font-size="9" font-weight="600" letter-spacing="1.2" fill="#64748B">
+    SHIPPING LABEL TOOL
+  </text>
+
+  <!-- Defs -->
+  <defs>
+    <linearGradient id="brandGrad" x1="2" y1="5" x2="42" y2="45" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#2874F0"/>
+      <stop offset="1" stop-color="#1E40AF"/>
+    </linearGradient>
+  </defs>
+</svg>
