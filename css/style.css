@@ -1151,6 +1151,23 @@ a:hover {
     grid-template-columns: 1fr;
   }
 
+  .loading-card {
+    padding: 1.75rem 1rem;
+  }
+
+  .loading-title {
+    font-size: 1.05rem;
+  }
+
+  .loading-desc {
+    font-size: 0.85rem;
+    margin-bottom: 1rem;
+  }
+
+  .loading-progress-track {
+    max-width: 100%;
+  }
+
   .brand-title {
     font-size: 1.2rem;
   }
