@@ -1,5 +1,5 @@
 /**
- * QuickLabelCrop - PWA Installation & Service Worker Controller
+ * QuickCrop - PWA Installation & Service Worker Controller
  * Manages beforeinstallprompt, install buttons, and iOS Add-to-Home-Screen prompt.
  */
 
@@ -13,10 +13,10 @@
     window.addEventListener('load', () => {
       navigator.serviceWorker.register('/sw.js')
         .then((reg) => {
-          console.log('[QuickLabelCrop] Service Worker registered with scope:', reg.scope);
+          console.log('[QuickCrop] Service Worker registered with scope:', reg.scope);
         })
         .catch((err) => {
-          console.warn('[QuickLabelCrop] Service Worker registration failed:', err);
+          console.warn('[QuickCrop] Service Worker registration failed:', err);
         });
     });
   }
@@ -59,13 +59,13 @@
     // Prevent standard mini-infobar from automatically showing on mobile
     e.preventDefault();
     deferredInstallPrompt = e;
-    console.log('[QuickLabelCrop] Install prompt captured');
+    console.log('[QuickCrop] Install prompt captured');
     updateInstallButtons();
   });
 
   // Listen for appinstalled event
   window.addEventListener('appinstalled', () => {
-    console.log('[QuickLabelCrop] App installed successfully');
+    console.log('[QuickCrop] App installed successfully');
     deferredInstallPrompt = null;
     const installBtns = document.querySelectorAll('.btn-install-pwa');
     installBtns.forEach(btn => {
@@ -88,9 +88,9 @@
       deferredInstallPrompt.prompt();
       const choiceResult = await deferredInstallPrompt.userChoice;
       if (choiceResult.outcome === 'accepted') {
-        console.log('[QuickLabelCrop] User accepted install prompt');
+        console.log('[QuickCrop] User accepted install prompt');
       } else {
-        console.log('[QuickLabelCrop] User dismissed install prompt');
+        console.log('[QuickCrop] User dismissed install prompt');
       }
       deferredInstallPrompt = null;
     } else if (isIos()) {
@@ -111,10 +111,10 @@
         <div class="pwa-modal-card">
           <button class="pwa-modal-close" onclick="closePwaModal()">&times;</button>
           <div class="pwa-modal-icon">
-            <img src="/assets/icon-192.png" alt="QuickLabelCrop Icon" width="56" height="56" style="border-radius: 12px;" />
+            <img src="/assets/icon-192.png" alt="QuickCrop Icon" width="56" height="56" style="border-radius: 12px;" />
           </div>
-          <h3>Install QuickLabelCrop on iOS</h3>
-          <p>Install QuickLabelCrop to your iPhone / iPad home screen for instant 1-click access:</p>
+          <h3>Install QuickCrop on iOS</h3>
+          <p>Install QuickCrop to your iPhone / iPad home screen for instant 1-click access:</p>
           <ol class="pwa-modal-steps">
             <li>Tap the <strong>Share</strong> button <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle;"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path><polyline points="16 6 12 2 8 6"></polyline><line x1="12" y1="2" x2="12" y2="15"></line></svg> at the bottom of Safari.</li>
             <li>Scroll down and tap <strong>Add to Home Screen</strong> <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle;"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg>.</li>
@@ -138,10 +138,10 @@
         <div class="pwa-modal-card">
           <button class="pwa-modal-close" onclick="closePwaModal()">&times;</button>
           <div class="pwa-modal-icon">
-            <img src="/assets/icon-192.png" alt="QuickLabelCrop Icon" width="56" height="56" style="border-radius: 12px;" />
+            <img src="/assets/icon-192.png" alt="QuickCrop Icon" width="56" height="56" style="border-radius: 12px;" />
           </div>
-          <h3>Install QuickLabelCrop Web App</h3>
-          <p>QuickLabelCrop can be installed as an ultra-fast desktop or mobile app:</p>
+          <h3>Install QuickCrop Web App</h3>
+          <p>QuickCrop can be installed as an ultra-fast desktop or mobile app:</p>
           <div style="background: #F8FAFC; border: 1px solid #E2E8F0; padding: 0.85rem; border-radius: 8px; font-size: 0.88rem; margin: 1rem 0; text-align: left;">
             <p><strong>On Chrome / Edge (Desktop):</strong> Click the install icon (⊕) in the right side of your browser address bar.</p>
             <p style="margin-top: 0.5rem;"><strong>On Android:</strong> Tap the 3 dots menu (⋮) and choose <strong>"Install app"</strong> or <strong>"Add to Home Screen"</strong>.</p>

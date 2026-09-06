@@ -300,6 +300,18 @@
         return;
       }
 
+      // Automatically group and sort multi-order batches by SKU for consecutive packing
+      if (pagesMetadata.length > 1) {
+        pagesMetadata.sort((a, b) => {
+          const skuA = (a.sku || '').toLowerCase().trim();
+          const skuB = (b.sku || '').toLowerCase().trim();
+          if (skuA && skuB && skuA !== skuB) {
+            return skuA.localeCompare(skuB, undefined, { numeric: true, sensitivity: 'base' });
+          }
+          return a.pageIndex - b.pageIndex;
+        });
+      }
+
       currentLabelBox = pagesMetadata.detectedBox || FLIPKART_LABEL_BOX;
 
       updateLoadingProgress('Formatting thermal label preview...', 95);
@@ -314,7 +326,8 @@
         fileSizeDisplay.textContent = sizeKb >= 1024 ? (sizeKb / 1024).toFixed(2) + ' MB' : sizeKb.toFixed(1) + ' KB';
       }
       if (orderCountDisplay) {
-        orderCountDisplay.textContent = `${pagesMetadata.length} Order${pagesMetadata.length > 1 ? 's' : ''} Ready`;
+        const isGrouped = pagesMetadata.length > 1;
+        orderCountDisplay.textContent = `${pagesMetadata.length} Order${pagesMetadata.length > 1 ? 's' : ''} Ready${isGrouped ? ' (Grouped by SKU)' : ''}`;
       }
 
       if (btnDownloadInvoices) btnDownloadInvoices.style.display = 'inline-flex';
@@ -424,11 +437,13 @@
 
     const meta = pagesMetadata[currentPage - 1];
     if (meta && orderMetaDisplay) {
-      orderMetaDisplay.textContent = `${meta.orderId} • ${meta.courier}`;
+      const skuText = meta.sku && meta.sku !== 'General Product' && meta.sku !== 'General SKU' ? ` • SKU: ${meta.sku}` : '';
+      orderMetaDisplay.textContent = `${meta.orderId} • ${meta.courier}${skuText}`;
     }
 
     try {
-      const page = await currentPdfDocProxy.getPage(currentPage);
+      const sourcePageNum = meta ? (meta.pageIndex + 1) : currentPage;
+      const page = await currentPdfDocProxy.getPage(sourcePageNum);
       const a4Height = 841.89;
       const cropScale = 1.6;
 

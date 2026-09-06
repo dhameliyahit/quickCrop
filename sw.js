@@ -1,9 +1,9 @@
 /**
- * QuickLabelCrop - Service Worker
+ * QuickCrop - Service Worker
  * Provides offline caching, lightning-fast loads, and PWA installability.
  */
 
-const CACHE_NAME = 'quicklabelcrop-v3';
+const CACHE_NAME = 'quickcrop-v6';
 const PRECACHE_ASSETS = [
   '/',
   '/index.html',

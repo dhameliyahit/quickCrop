@@ -67,7 +67,7 @@ async function parsePdfMetadata(pdfDoc, onProgress) {
     else if (fullText.includes('Blue Dart')) courier = 'Blue Dart';
 
     // SKU
-    let sku = 'General Product';
+    let sku = '';
     const skuSectionMatch = fullText.match(/SKU\s*ID\s*\|?\s*Description[\s\S]*?(?:TOTAL|FMPC|Not for resale|$)/i);
     if (skuSectionMatch) {
       const cleaned = skuSectionMatch[0]
@@ -77,6 +77,15 @@ async function parsePdfMetadata(pdfDoc, onProgress) {
       if (cleaned.length > 2) {
         sku = cleaned.split('\n')[0].substring(0, 45).trim();
       }
+    }
+    if (!sku) {
+      const skuInlineMatch = fullText.match(/SKU\s*(?:ID)?\s*[:|-]\s*([A-Za-z0-9_\-\.\/ ]{2,45})/i);
+      if (skuInlineMatch && skuInlineMatch[1]) {
+        sku = skuInlineMatch[1].trim();
+      }
+    }
+    if (!sku) {
+      sku = 'General Product';
     }
 
     const paymentMode = fullText.includes('COD') ? 'COD' : 'PREPAID';

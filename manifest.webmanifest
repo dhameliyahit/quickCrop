@@ -1,6 +1,6 @@
 {
-  "name": "QuickLabelCrop - Flipkart Shipping Label Cropper",
-  "short_name": "QuickLabelCrop",
+  "name": "QuickCrop - Flipkart Shipping Label Cropper",
+  "short_name": "QuickCrop",
   "description": "Free 1-click shipping label cropper for Flipkart sellers. Fast 4x6 thermal barcode stickers with zero quality loss and 100% client-side privacy.",
   "start_url": "/",
   "scope": "/",
