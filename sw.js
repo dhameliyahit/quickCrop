@@ -3,7 +3,7 @@
  * Provides offline caching, lightning-fast loads, and PWA installability.
  */
 
-const CACHE_NAME = 'quicklabelcrop-v2';
+const CACHE_NAME = 'quicklabelcrop-v3';
 const PRECACHE_ASSETS = [
   '/',
   '/index.html',
