@@ -9,6 +9,16 @@
     })(window,document,'script','dataLayer','GTM-KZS79R47');</script>
     <!-- End Google Tag Manager -->
 
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-703JK5G5D4"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-703JK5G5D4');
+    </script>
+
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Flipkart Label Crop Tool | QuickLabelCrop (QuickCrop) - Free 4x6 Thermal Cropper</title>
@@ -309,6 +319,31 @@
 
         <!-- Upload Zone -->
         <div id="upload-area">
+          <!-- Cropper Error Card -->
+          <div class="cropper-error-card" id="cropper-error-card" style="display: none;" role="alert">
+            <div class="cropper-error-icon">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="8" x2="12" y2="12"></line>
+                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+              </svg>
+            </div>
+            <div class="cropper-error-content">
+              <h4 class="cropper-error-title" id="cropper-error-title">Unable to Process Label File</h4>
+              <p class="cropper-error-desc" id="cropper-error-desc">Please ensure this is a valid Flipkart shipping label PDF or image.</p>
+              <div class="cropper-error-actions">
+                <button type="button" class="btn-error-retry" id="btn-error-retry">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                    <polyline points="23 4 23 10 17 10"></polyline>
+                    <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                  </svg>
+                  <span>Upload Another File</span>
+                </button>
+                <button type="button" class="btn-error-dismiss" id="btn-error-dismiss">Dismiss</button>
+              </div>
+            </div>
+          </div>
+
           <div class="upload-zone" id="dropzone">
             <input type="file" id="file-input" accept="application/pdf,.pdf,image/png,image/jpeg,image/webp" style="display: none;" />
             <svg class="upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -345,6 +380,10 @@
               </svg>
             </div>
             <h3 class="loading-title" id="loading-title">Processing Shipping Labels...</h3>
+            <div class="loading-file-pill" id="loading-file-pill">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+              <span class="loading-file-name" id="loading-file-name">filename.pdf</span>
+            </div>
             <p class="loading-desc" id="loading-desc">Scanning PDF pages and isolating thermal label boundaries.</p>
             <div class="loading-progress-track">
               <div class="loading-progress-bar" id="loading-progress-bar"></div>

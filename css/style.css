@@ -551,6 +551,9 @@ a:hover {
   align-items: center;
   justify-content: center;
   box-shadow: var(--shadow-sm);
+  max-width: 100%;
+  overflow: hidden;
+  box-sizing: border-box;
 }
 
 .loading-spinner-ring {
@@ -586,7 +589,43 @@ a:hover {
   font-size: 1.2rem;
   font-weight: 800;
   color: #0F172A;
-  margin-bottom: 0.35rem;
+  margin-bottom: 0.5rem;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  max-width: 100%;
+  line-height: 1.35;
+  padding: 0 0.5rem;
+  box-sizing: border-box;
+}
+
+.loading-file-pill {
+  display: none;
+  align-items: center;
+  gap: 0.45rem;
+  background: #EFF6FF;
+  color: var(--primary-blue);
+  border: 1px solid #BFDBFE;
+  padding: 0.3rem 0.85rem;
+  border-radius: 9999px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  margin-bottom: 0.85rem;
+  max-width: min(440px, 92%);
+  box-sizing: border-box;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.loading-file-pill svg {
+  flex-shrink: 0;
+}
+
+.loading-file-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  word-break: break-all;
+  direction: rtl;
+  text-align: left;
 }
 
 .loading-desc {
@@ -595,6 +634,147 @@ a:hover {
   margin-bottom: 1.25rem;
   max-width: 480px;
   line-height: 1.5;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  padding: 0 0.5rem;
+}
+
+/* ==========================================================================
+   Error Banner & States
+   ========================================================================== */
+.cropper-error-card {
+  display: none;
+  align-items: flex-start;
+  gap: 1rem;
+  background: #FEF2F2;
+  border: 1.5px solid #FCA5A5;
+  border-radius: var(--radius-md);
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 4px 14px rgba(239, 68, 68, 0.1);
+  animation: fadeIn 0.25s ease-out;
+  text-align: left;
+  box-sizing: border-box;
+  width: 100%;
+}
+
+.cropper-error-icon {
+  color: #DC2626;
+  background: #FEE2E2;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.cropper-error-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.cropper-error-title {
+  font-size: 1.02rem;
+  font-weight: 800;
+  color: #991B1B;
+  margin-bottom: 0.3rem;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+.cropper-error-desc {
+  font-size: 0.88rem;
+  color: #7F1D1D;
+  line-height: 1.55;
+  margin-bottom: 0.85rem;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+.cropper-error-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  flex-wrap: wrap;
+}
+
+.btn-error-retry {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: #DC2626;
+  color: #FFFFFF;
+  border: none;
+  padding: 0.5rem 1rem;
+  font-size: 0.84rem;
+  font-weight: 700;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.btn-error-retry:hover {
+  background: #B91C1C;
+}
+
+.btn-error-dismiss {
+  background: transparent;
+  border: 1px solid #FCA5A5;
+  color: #991B1B;
+  padding: 0.5rem 0.9rem;
+  font-size: 0.84rem;
+  font-weight: 600;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.btn-error-dismiss:hover {
+  background: #FEE2E2;
+}
+
+/* Toast Floating Notification */
+.cropper-toast {
+  position: fixed;
+  bottom: 1.75rem;
+  right: 1.75rem;
+  background: #1E293B;
+  color: #FFFFFF;
+  padding: 0.75rem 1.25rem;
+  border-radius: var(--radius-md);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  font-size: 0.88rem;
+  font-weight: 600;
+  z-index: 1000;
+  animation: slideToastUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  max-width: min(90vw, 420px);
+  box-sizing: border-box;
+}
+
+.cropper-toast.toast-error {
+  background: #991B1B;
+  border-left: 4px solid #EF4444;
+}
+
+.cropper-toast.toast-success {
+  background: #065F46;
+  border-left: 4px solid #10B981;
+}
+
+@keyframes slideToastUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
 
 .loading-progress-track {
@@ -665,11 +845,20 @@ a:hover {
   gap: 0.75rem;
 }
 
+.result-header-bar > div:first-child {
+  min-width: 0;
+  flex: 1 1 auto;
+  max-width: 100%;
+  overflow: hidden;
+}
+
 .file-info-text {
   font-weight: 700;
   color: #065F46;
   font-size: 0.92rem;
   word-break: break-all;
+  overflow-wrap: anywhere;
+  max-width: 100%;
 }
 
 .file-info-sub {

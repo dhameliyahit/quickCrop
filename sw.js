@@ -3,7 +3,7 @@
  * Provides offline caching, lightning-fast loads, and PWA installability.
  */
 
-const CACHE_NAME = 'quicklabelcrop-v1';
+const CACHE_NAME = 'quicklabelcrop-v2';
 const PRECACHE_ASSETS = [
   '/',
   '/index.html',
@@ -20,6 +20,8 @@ const PRECACHE_ASSETS = [
   '/assets/icon-512.png',
   '/assets/icon-maskable-512.png',
   '/assets/flipkart-logo.svg',
+  '/assets/binocular-404-error.json',
+  '/404.html',
   '/manifest.webmanifest'
 ];
 
@@ -55,6 +57,33 @@ self.addEventListener('fetch', (event) => {
 
   // Only handle GET requests
   if (request.method !== 'GET') return;
+
+  // Dedicated handling for HTML page navigation to prevent ERR_FAILED on redirects
+  if (request.mode === 'navigate') {
+    event.respondWith(
+      fetch(request)
+        .then((networkResponse) => {
+          // If server issued a redirect (e.g. 301/308), Chrome cannot accept redirected responses in respondWith directly
+          if (networkResponse.redirected) {
+            return Response.redirect(networkResponse.url, 302);
+          }
+          if (networkResponse && networkResponse.status === 200) {
+            const responseClone = networkResponse.clone();
+            caches.open(CACHE_NAME).then((cache) => {
+              cache.put(request, responseClone);
+            });
+          }
+          return networkResponse;
+        })
+        .catch(() => {
+          // Offline fallback
+          return caches.match(request).then((cachedResponse) => {
+            return cachedResponse || caches.match('/index.html');
+          });
+        })
+    );
+    return;
+  }
 
   const url = new URL(request.url);
 
