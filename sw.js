@@ -3,14 +3,22 @@
  * Provides offline caching, lightning-fast loads, and PWA installability.
  */
 
-const CACHE_NAME = 'quickcrop-v6';
+const CACHE_NAME = 'quickcrop-v9';
+const isLocalhost = Boolean(
+  self.location.hostname === 'localhost' ||
+  self.location.hostname === '[::1]' ||
+  self.location.hostname.match(/^127(?:\.(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)){3}$/)
+);
 const PRECACHE_ASSETS = [
   '/',
   '/index.html',
   '/flipkart-shipping-label-crop-tool/',
   '/flipkart-shipping-label-crop-tool/index.html',
+  '/amazon-shipping-label-crop-tool/',
+  '/amazon-shipping-label-crop-tool/index.html',
   '/css/style.css',
   '/js/app.js',
+  '/js/amazon-app.js',
   '/js/pdf-cropper.js',
   '/js/pdf-parser.js',
   '/js/pwa.js',
@@ -20,6 +28,7 @@ const PRECACHE_ASSETS = [
   '/assets/icon-512.png',
   '/assets/icon-maskable-512.png',
   '/assets/flipkart-logo.svg',
+  '/assets/amazon-logo.svg',
   '/assets/binocular-404-error.json',
   '/404.html',
   '/manifest.webmanifest'
@@ -58,12 +67,19 @@ self.addEventListener('fetch', (event) => {
   // Only handle GET requests
   if (request.method !== 'GET') return;
 
+  // On localhost or during development, bypass cache for same-origin requests
+  if (isLocalhost) {
+    event.respondWith(
+      fetch(request).catch(() => caches.match(request))
+    );
+    return;
+  }
+
   // Dedicated handling for HTML page navigation to prevent ERR_FAILED on redirects
   if (request.mode === 'navigate') {
     event.respondWith(
       fetch(request)
         .then((networkResponse) => {
-          // If server issued a redirect (e.g. 301/308), Chrome cannot accept redirected responses in respondWith directly
           if (networkResponse.redirected) {
             return Response.redirect(networkResponse.url, 302);
           }
@@ -76,7 +92,6 @@ self.addEventListener('fetch', (event) => {
           return networkResponse;
         })
         .catch(() => {
-          // Offline fallback
           return caches.match(request).then((cachedResponse) => {
             return cachedResponse || caches.match('/index.html');
           });

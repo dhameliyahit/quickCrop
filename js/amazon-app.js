@@ -1,6 +1,7 @@
 /**
- * QuickCrop - Flipkart Shipping Label App Controller
- * Handles PDF & Image uploads, vector cropping, instant preview, pagination, and printing
+ * QuickCrop - Amazon Shipping Label App Controller
+ * Pure Vector Form XObject Cropping, SKU & Qty Stamping, Live Canvas Preview,
+ * Multi-Order Batching, and Direct Thermal Printing
  */
 
 (function () {
@@ -9,13 +10,11 @@
   // Global State
   let currentPdfBytes = null;
   let currentPdfDocProxy = null;
-  let pagesMetadata = [];
-  let currentPage = 1;
-  let currentLabelBox = FLIPKART_LABEL_BOX;
+  let ordersMetadata = [];
+  let currentOrderIndex = 0;
 
   let currentImageCropResult = null;
   let isImageMode = false;
-  let currentMarketplace = 'flipkart';
 
   // DOM Elements
   const dropzone = document.getElementById('dropzone');
@@ -57,6 +56,7 @@
   const btnDirectPrint = document.getElementById('btn-direct-print');
   const btnDownloadInvoices = document.getElementById('btn-download-invoices');
   const btnDownloadPng = document.getElementById('btn-download-png');
+  const chkStampSku = document.getElementById('chk-stamp-sku');
 
   // Error State Display
   function showError(title, desc) {
@@ -66,7 +66,7 @@
 
     if (cropperErrorCard) {
       if (cropperErrorTitle) cropperErrorTitle.textContent = title || 'Unable to Process Label File';
-      if (cropperErrorDesc) cropperErrorDesc.textContent = desc || 'Please ensure this is a valid Flipkart shipping label PDF or image.';
+      if (cropperErrorDesc) cropperErrorDesc.textContent = desc || 'Please ensure this is a valid Amazon Easy Ship or Self Ship order PDF/image.';
       cropperErrorCard.style.display = 'flex';
       cropperErrorCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
@@ -102,9 +102,9 @@
     hideError();
     if (loadingState) {
       loadingState.style.display = 'block';
-      if (loadingTitle) loadingTitle.textContent = title || 'Processing Shipping Labels...';
-      if (loadingDesc) loadingDesc.textContent = desc || 'Scanning PDF pages and isolating thermal label boundaries.';
-      if (loadingStatus) loadingStatus.textContent = status || 'Reading vector data...';
+      if (loadingTitle) loadingTitle.textContent = title || 'Processing Amazon Shipping Labels...';
+      if (loadingDesc) loadingDesc.textContent = desc || 'Scanning A4 pages, isolating thermal label boundaries, and extracting SKUs.';
+      if (loadingStatus) loadingStatus.textContent = status || 'Reading PDF vector streams...';
 
       if (loadingFilePill && loadingFileName) {
         if (fileName) {
@@ -137,7 +137,7 @@
     if (loadingState) loadingState.style.display = 'none';
   }
 
-  // Error Card Action Listeners
+  // Error Card Actions
   if (btnErrorRetry) {
     btnErrorRetry.addEventListener('click', () => {
       hideError();
@@ -186,15 +186,15 @@
     });
   }
 
-  // Upload Another File
+  // Reset / Change File
   if (changeFileBtn) {
     changeFileBtn.addEventListener('click', () => {
       currentPdfBytes = null;
       currentPdfDocProxy = null;
-      pagesMetadata = [];
+      ordersMetadata = [];
+      currentOrderIndex = 0;
       currentImageCropResult = null;
       isImageMode = false;
-      currentLabelBox = FLIPKART_LABEL_BOX;
       if (fileInput) fileInput.value = '';
       hideLoading();
       hideError();
@@ -203,20 +203,25 @@
     });
   }
 
-  // Determine file type and delegate with complete error validation
+  // Toggle SKU stamping re-render
+  if (chkStampSku) {
+    chkStampSku.addEventListener('change', () => {
+      renderCurrentOrderPreview();
+    });
+  }
+
+  // Load and validate selected file
   async function loadSelectedFile(file) {
     hideError();
     if (!file) return;
 
-    // Validate 0-byte or empty file
     if (file.size === 0) {
-      showError('Empty File Selected', 'The selected file has 0 bytes. Please ensure the file downloaded completely from Flipkart Seller Hub.');
+      showError('Empty File Selected', 'The selected file has 0 bytes. Please ensure the file downloaded completely from Amazon Seller Central.');
       return;
     }
 
-    // Validate excessive file size (> 80MB)
     if (file.size > 80 * 1024 * 1024) {
-      showError('File Exceeds Size Limit', `The file is ${(file.size / (1024 * 1024)).toFixed(1)} MB. Flipkart shipping label files are normally under 15 MB.`);
+      showError('File Exceeds Size Limit', `The file is ${(file.size / (1024 * 1024)).toFixed(1)} MB. Amazon shipping label files are normally under 15 MB.`);
       return;
     }
 
@@ -244,42 +249,42 @@
     } else {
       showError(
         'Unsupported File Format',
-        `"${file.name}" is not a supported format. Please upload an official Flipkart shipping label PDF (.pdf) or image (.png, .jpg, .webp).`
+        `"${file.name}" is not a supported format. Please upload an official Amazon Seller shipping label PDF (.pdf) or image (.png, .jpg, .webp).`
       );
     }
   }
 
-  // Process PDF Buffer with Comprehensive Error Handling
+  // Process Amazon PDF Buffer
   async function processPdfBuffer(buffer, fileName) {
     try {
-      showLoading('Processing Shipping Labels...', 'Analyzing document pages and isolating shipping labels...', 'Reading PDF streams...', fileName);
+      showLoading('Processing Amazon Shipping Labels...', 'Scanning A4 pages and separating labels from invoices...', 'Reading PDF streams...', fileName);
 
       if (!buffer || buffer.byteLength === 0) {
-        showError('Empty PDF Document', 'The uploaded PDF file contains no data. Please re-download the label from Flipkart Seller Hub.');
+        showError('Empty PDF Document', 'The uploaded PDF file contains no data. Please re-download the label from Amazon Seller Central.');
         return;
       }
 
-      // Clone buffer so PDF.js worker transfer NEVER detaches currentPdfBytes!
+      // Clone buffer to prevent worker detachment
       const cleanBuffer = buffer.slice(0);
       currentPdfBytes = new Uint8Array(cleanBuffer);
       currentImageCropResult = null;
       isImageMode = false;
 
-      // Load with PDF.js using a separate clone
+      // Load with PDF.js
       const pdfJsBuffer = buffer.slice(0);
       try {
         currentPdfDocProxy = await loadPdfDoc(pdfJsBuffer);
       } catch (pdfJsErr) {
         console.error('PDF.js parse error:', pdfJsErr);
         if (pdfJsErr.name === 'PasswordException' || (pdfJsErr.message && pdfJsErr.message.toLowerCase().includes('password'))) {
-          showError('Password Protected PDF', 'This PDF is encrypted with a password. QuickCrop cannot process locked documents. Please remove the password or download the unencrypted label PDF directly from Flipkart.');
+          showError('Password Protected PDF', 'This PDF is encrypted with a password. QuickCrop cannot process locked documents. Please remove the password or download the unencrypted label PDF directly from Amazon.');
           return;
         }
         if (pdfJsErr.name === 'InvalidPDFException' || (pdfJsErr.message && pdfJsErr.message.toLowerCase().includes('invalid pdf'))) {
-          showError('Corrupted PDF File', 'This file is corrupted or not a recognized PDF document. Please verify the file or re-download it from Flipkart Seller Hub.');
+          showError('Corrupted PDF File', 'This file is corrupted or not a recognized PDF document. Please verify the file or re-download it from Amazon Seller Central.');
           return;
         }
-        showError('Unable to Open PDF', 'Failed to parse the PDF document: ' + (pdfJsErr.message || 'Unknown PDF error') + '. Please ensure this is a standard Flipkart shipping label PDF.');
+        showError('Unable to Open PDF', 'Failed to parse the PDF document: ' + (pdfJsErr.message || 'Unknown PDF error') + '. Please ensure this is a standard Amazon shipping label PDF.');
         return;
       }
 
@@ -291,53 +296,29 @@
       const totalPages = currentPdfDocProxy.numPages;
       updateLoadingProgress(`Reading 1 of ${totalPages} pages...`, 15);
 
-      // Auto-detect marketplace from page 1 text stream
-      let isAmazonDoc = false;
-      try {
-        const page1 = await currentPdfDocProxy.getPage(1);
-        const p1TextContent = await page1.getTextContent();
-        const p1FullText = p1TextContent.items.map((it) => it.str).join(' ');
-        isAmazonDoc =
-          /amazon|ATSPL|Tax Invoice\/Bill of Supply|Cash Memo/i.test(p1FullText) ||
-          (p1FullText.includes('Order Id') && p1FullText.includes('AWB') && p1FullText.includes('DELIVERY STATION'));
-      } catch (detectErr) {
-        console.warn('Marketplace detect error:', detectErr);
-      }
+      ordersMetadata = await parseAmazonPdfMetadata(currentPdfDocProxy, (current, total) => {
+        const pct = Math.round(15 + (current / total) * 75);
+        updateLoadingProgress(`Analyzing order page ${current} of ${total}...`, pct);
+      });
 
-      if (isAmazonDoc) {
-        currentMarketplace = 'amazon';
-        pagesMetadata = await parseAmazonPdfMetadata(currentPdfDocProxy, (current, total) => {
-          const pct = Math.round(15 + (current / total) * 75);
-          updateLoadingProgress(`Scanning Amazon order ${current} of ${total}...`, pct);
-        });
-      } else {
-        currentMarketplace = 'flipkart';
-        pagesMetadata = await parsePdfMetadata(currentPdfDocProxy, (current, total) => {
-          const pct = Math.round(15 + (current / total) * 75);
-          updateLoadingProgress(`Scanning Flipkart order ${current} of ${total}...`, pct);
-        });
-      }
-
-      if (!pagesMetadata || pagesMetadata.length === 0) {
-        showError('No Orders Detected', 'Could not detect any shipping orders in this PDF. Please ensure this is an official Flipkart or Amazon shipping label document.');
+      if (!ordersMetadata || ordersMetadata.length === 0) {
+        showError('No Orders Detected', 'Could not detect any Amazon shipping labels in this PDF. Please ensure this is an official Amazon Easy Ship or Self Ship label document.');
         return;
       }
 
       // Automatically group and sort multi-order batches by SKU for consecutive packing
-      if (pagesMetadata.length > 1) {
-        pagesMetadata.sort((a, b) => {
+      if (ordersMetadata.length > 1) {
+        ordersMetadata.sort((a, b) => {
           const skuA = (a.sku || '').toLowerCase().trim();
           const skuB = (b.sku || '').toLowerCase().trim();
           if (skuA && skuB && skuA !== skuB) {
             return skuA.localeCompare(skuB, undefined, { numeric: true, sensitivity: 'base' });
           }
-          return a.pageIndex - b.pageIndex;
+          return a.orderIndex - b.orderIndex;
         });
       }
 
-      currentLabelBox = pagesMetadata.detectedBox || FLIPKART_LABEL_BOX;
-
-      updateLoadingProgress('Formatting thermal label preview...', 95);
+      updateLoadingProgress('Formatting 4x6 thermal preview...', 95);
 
       // Update File Banner
       if (fileNameDisplay) {
@@ -349,9 +330,8 @@
         fileSizeDisplay.textContent = sizeKb >= 1024 ? (sizeKb / 1024).toFixed(2) + ' MB' : sizeKb.toFixed(1) + ' KB';
       }
       if (orderCountDisplay) {
-        const isGrouped = pagesMetadata.length > 1;
-        const brand = currentMarketplace === 'amazon' ? 'Amazon ' : 'Flipkart ';
-        orderCountDisplay.textContent = `${pagesMetadata.length} ${brand}Order${pagesMetadata.length > 1 ? 's' : ''} Ready${isGrouped ? ' (Grouped by SKU)' : ''}`;
+        const isGrouped = ordersMetadata.length > 1;
+        orderCountDisplay.textContent = `${ordersMetadata.length} Order${ordersMetadata.length > 1 ? 's' : ''} Ready${isGrouped ? ' (Grouped by SKU)' : ''}`;
       }
 
       if (btnDownloadInvoices) btnDownloadInvoices.style.display = 'inline-flex';
@@ -360,31 +340,36 @@
       hideLoading();
       resultCard.style.display = 'block';
 
-      currentPage = 1;
+      currentOrderIndex = 0;
       updatePaginationUI();
-      renderCurrentPage();
+      await renderCurrentOrderPreview();
 
       resultCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
     } catch (err) {
-      console.error('Processing error:', err);
-      showError('Error Processing PDF', (err.message || 'An unexpected error occurred while analyzing the PDF.') + ' Please verify the file and try again.');
+      console.error('Amazon processing error:', err);
+      showError('Error Processing Amazon PDF', (err.message || 'An unexpected error occurred while analyzing the PDF.') + ' Please verify the file and try again.');
     }
   }
 
-  // Process Image File with Comprehensive Error Handling
+  // Process Image File
   async function processImageFile(file) {
     try {
-      showLoading('Processing Label Image...', 'Extracting Flipkart shipping label from image...', 'Cropping label...', file.name);
+      showLoading('Processing Label Image...', 'Extracting Amazon shipping label from image...', 'Cropping label...', file.name);
 
-      const result = await cropFlipkartLabelImage(file);
+      const result = await cropAmazonLabelImage(file);
       currentImageCropResult = result;
       currentPdfBytes = result.pdfBytes;
-      pagesMetadata = [{
-        orderId: 'Cropped Label Image',
-        courier: 'E-Kart Logistics',
-        sku: 'Flipkart Order',
-        pageIndex: 0,
-      }];
+      ordersMetadata = [
+        {
+          orderIndex: 0,
+          orderId: 'Cropped Label Image',
+          courier: 'Amazon Easy Ship',
+          sku: 'Amazon Order',
+          qty: 1,
+          sourcePageIndex: 0,
+          labelBox: AMAZON_LABEL_BOX_2UP_TOP,
+        },
+      ];
 
       if (fileNameDisplay) {
         fileNameDisplay.textContent = file.name;
@@ -409,7 +394,7 @@
       }
 
       if (orderMetaDisplay) {
-        orderMetaDisplay.textContent = '100% Cropped Shipping Label';
+        orderMetaDisplay.textContent = '100% Cropped Amazon Shipping Label';
       }
 
       hideLoading();
@@ -417,145 +402,121 @@
       resultCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
     } catch (err) {
       console.error('Image crop error:', err);
-      showError('Image Processing Error', 'Could not crop the shipping label from this image: ' + (err.message || 'Image decode failed') + '. Please ensure the image clearly displays the Flipkart shipping label.');
+      showError('Image Processing Error', 'Could not crop the shipping label from this image: ' + (err.message || 'Image decode failed') + '. Please ensure the image clearly displays the Amazon shipping label.');
     }
   }
 
-  // Stepper
+  // Stepper Listeners
   if (prevPageBtn) {
     prevPageBtn.addEventListener('click', () => {
-      if (currentPage > 1) {
-        currentPage--;
+      if (currentOrderIndex > 0) {
+        currentOrderIndex--;
         updatePaginationUI();
-        renderCurrentPage();
+        renderCurrentOrderPreview();
       }
     });
   }
 
   if (nextPageBtn) {
     nextPageBtn.addEventListener('click', () => {
-      if (currentPage < pagesMetadata.length) {
-        currentPage++;
+      if (currentOrderIndex < ordersMetadata.length - 1) {
+        currentOrderIndex++;
         updatePaginationUI();
-        renderCurrentPage();
+        renderCurrentOrderPreview();
       }
     });
   }
 
   function updatePaginationUI() {
     if (!stepperRow) return;
-    if (pagesMetadata.length <= 1) {
+    if (ordersMetadata.length <= 1) {
       stepperRow.style.display = 'none';
     } else {
       stepperRow.style.display = 'flex';
-      if (pageIndicator) pageIndicator.textContent = `Order ${currentPage} of ${pagesMetadata.length}`;
-      if (prevPageBtn) prevPageBtn.disabled = currentPage <= 1;
-      if (nextPageBtn) nextPageBtn.disabled = currentPage >= pagesMetadata.length;
+      if (pageIndicator) pageIndicator.textContent = `Order ${currentOrderIndex + 1} of ${ordersMetadata.length}`;
+      if (prevPageBtn) prevPageBtn.disabled = currentOrderIndex <= 0;
+      if (nextPageBtn) nextPageBtn.disabled = currentOrderIndex >= ordersMetadata.length - 1;
     }
   }
 
-  // Render Cropped Label on Canvas
-  async function renderCurrentPage() {
+  // Render Cropped Label on Canvas with Optional SKU Overlay
+  async function renderCurrentOrderPreview() {
     if (isImageMode) return;
-    if (!currentPdfDocProxy || !canvas) return;
+    if (!currentPdfDocProxy || !canvas || ordersMetadata.length === 0) return;
 
-    const meta = pagesMetadata[currentPage - 1];
-    if (meta && orderMetaDisplay) {
-      const skuText = meta.sku && meta.sku !== 'General Product' && meta.sku !== 'General Item' && meta.sku !== 'General SKU' ? ` • SKU: ${meta.sku}` : '';
-      const stationText = meta.station ? ` [${meta.station}]` : '';
-      orderMetaDisplay.textContent = `${meta.orderId} • ${meta.courier}${stationText}${skuText}`;
+    const order = ordersMetadata[currentOrderIndex];
+    if (!order) return;
+
+    if (orderMetaDisplay) {
+      const skuText = order.sku && order.sku !== 'General Item' ? ` • SKU: ${order.sku} (Qty: ${order.qty || 1})` : '';
+      const stationText = order.station ? ` [${order.station}]` : '';
+      orderMetaDisplay.textContent = `${order.orderId} • ${order.courier}${stationText}${skuText}`;
     }
 
     try {
-      if (currentMarketplace === 'amazon') {
-        const sourcePageNum = typeof meta.sourcePageIndex === 'number' ? meta.sourcePageIndex + 1 : currentPage;
-        const page = await currentPdfDocProxy.getPage(sourcePageNum);
-        const viewport = page.getViewport({ scale: 1.0 });
-        const a4Height = viewport.height || 841.89;
-        const previewScale = 2.0;
+      const page = await currentPdfDocProxy.getPage(order.sourcePageIndex + 1);
+      const viewport = page.getViewport({ scale: 1.0 });
+      const a4Height = viewport.height || 841.89;
+      const previewScale = 2.0;
 
-        const offscreen = document.createElement('canvas');
-        const offCtx = offscreen.getContext('2d');
-        const renderViewport = page.getViewport({ scale: previewScale });
+      const offscreen = document.createElement('canvas');
+      const offCtx = offscreen.getContext('2d');
+      const renderViewport = page.getViewport({ scale: previewScale });
 
-        offscreen.width = renderViewport.width;
-        offscreen.height = renderViewport.height;
-        await page.render({ canvasContext: offCtx, viewport: renderViewport }).promise;
+      offscreen.width = renderViewport.width;
+      offscreen.height = renderViewport.height;
 
-        const box = meta.labelBox || AMAZON_LABEL_BOX_2UP_TOP;
-        const targetCanvasW = Math.round(288 * (previewScale / 1.5));
-        const targetCanvasH = Math.round(432 * (previewScale / 1.5));
+      await page.render({ canvasContext: offCtx, viewport: renderViewport }).promise;
 
-        canvas.width = targetCanvasW;
-        canvas.height = targetCanvasH;
+      // Extract coordinates from order.labelBox
+      const box = order.labelBox || AMAZON_LABEL_BOX_2UP_TOP;
+      const cropW = box.width;
+      const cropH = box.height;
 
-        const ctx = canvas.getContext('2d');
-        ctx.fillStyle = '#FFFFFF';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
+      // Output canvas aspect ratio 4x6
+      const targetCanvasW = Math.round(288 * (previewScale / 1.5));
+      const targetCanvasH = Math.round(432 * (previewScale / 1.5));
 
-        const srcX = box.x * previewScale;
-        const srcY = (a4Height - (box.y + box.height)) * previewScale;
-        const srcW = box.width * previewScale;
-        const srcH = box.height * previewScale;
+      canvas.width = targetCanvasW;
+      canvas.height = targetCanvasH;
 
-        const scaleFit = Math.min((targetCanvasW - 12) / srcW, (targetCanvasH - 12) / srcH);
-        const destW = srcW * scaleFit;
-        const destH = srcH * scaleFit;
-        const destX = (targetCanvasW - destW) / 2;
-        const destY = (targetCanvasH - destH) / 2;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-        ctx.drawImage(offscreen, srcX, srcY, srcW, srcH, destX, destY, destW, destH);
+      // PDF coordinate conversion: (0,0) is bottom-left
+      const srcX = box.x * previewScale;
+      const srcY = (a4Height - (box.y + cropH)) * previewScale;
+      const srcW = cropW * previewScale;
+      const srcH = cropH * previewScale;
 
-        // Draw SKU stamp overlay
-        if (meta.sku && meta.sku !== 'General Item') {
-          ctx.fillStyle = '#000000';
-          ctx.font = 'bold 13px Inter, sans-serif';
-          const qtyPart = meta.qty ? ` | Qty - ${meta.qty}` : '';
-          const stampText = `${meta.sku}${qtyPart}`;
-          const stampX = destX + 16 * (destW / box.width);
-          const stampY = destY + destH - 72 * (destH / box.height);
-          ctx.fillText(stampText, stampX, stampY);
-        }
-      } else {
-        const sourcePageNum = meta ? (meta.pageIndex + 1) : currentPage;
-        const page = await currentPdfDocProxy.getPage(sourcePageNum);
-        const a4Height = 841.89;
-        const cropScale = 1.6;
+      // Draw centered within 4x6 canvas
+      const scaleFit = Math.min((targetCanvasW - 12) / srcW, (targetCanvasH - 12) / srcH);
+      const destW = srcW * scaleFit;
+      const destH = srcH * scaleFit;
+      const destX = (targetCanvasW - destW) / 2;
+      const destY = (targetCanvasH - destH) / 2;
 
-        const offscreen = document.createElement('canvas');
-        const offCtx = offscreen.getContext('2d');
-        const viewport = page.getViewport({ scale: cropScale });
+      ctx.drawImage(offscreen, srcX, srcY, srcW, srcH, destX, destY, destW, destH);
 
-        offscreen.width = viewport.width;
-        offscreen.height = viewport.height;
-
-        await page.render({ canvasContext: offCtx, viewport }).promise;
-
-        const { x, y, width: cw, height: ch } = currentLabelBox || FLIPKART_LABEL_BOX;
-
-        canvas.width = Math.round(cw * cropScale);
-        canvas.height = Math.round(ch * cropScale);
-
-        const srcX = x * cropScale;
-        const srcY = (a4Height - (y + ch)) * cropScale;
-        const srcW = cw * cropScale;
-        const srcH = ch * cropScale;
-
-        const ctx = canvas.getContext('2d');
-        ctx.fillStyle = '#FFFFFF';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.drawImage(offscreen, srcX, srcY, srcW, srcH, 0, 0, canvas.width, canvas.height);
+      // Render SKU & Quantity stamp overlay if checkbox is checked
+      const shouldStamp = chkStampSku ? chkStampSku.checked : true;
+      if (shouldStamp && order.sku && order.sku !== 'General Item') {
+        ctx.fillStyle = '#000000';
+        ctx.font = 'bold 13px Inter, sans-serif';
+        const qtyPart = order.qty ? ` | Qty - ${order.qty}` : '';
+        const stampText = `${order.sku}${qtyPart}`;
+        // Draw into the designated white gap between declaration table and bottom routing box
+        const stampX = destX + 16 * (destW / cropW);
+        const stampY = destY + destH - 72 * (destH / cropH);
+        ctx.fillText(stampText, stampX, stampY);
       }
     } catch (err) {
-      console.error('Render error:', err);
+      console.error('Amazon render error:', err);
     }
   }
 
-  function getPageIndices() {
-    return pagesMetadata.map((p) => p.pageIndex);
-  }
-
-  // Download Cropped Shipping Labels (PDF) - Handles both top and bottom buttons
+  // Download Cropped Amazon Shipping Labels (PDF)
   async function executeDownloadPdf() {
     if (!currentPdfBytes) return;
 
@@ -568,26 +529,14 @@
 
     try {
       let outputBytes;
-      let downloadFileName = `Cropped_Labels_${Date.now()}.pdf`;
-      let confettiColors = ['#2874F0', '#FFE500', '#FB641B'];
-
       if (isImageMode && currentImageCropResult) {
         outputBytes = currentImageCropResult.pdfBytes;
-        downloadFileName = `Cropped_Label_${Date.now()}.pdf`;
-      } else if (currentMarketplace === 'amazon') {
-        outputBytes = await cropAmazonShippingLabels(currentPdfBytes, {
-          orders: pagesMetadata,
-          stampSku: true,
-        });
-        downloadFileName = `Amazon_Cropped_Labels_${Date.now()}.pdf`;
-        confettiColors = ['#FF9900', '#131921', '#232F3E', '#FFFFFF'];
       } else {
-        const pageIndices = getPageIndices();
-        outputBytes = await cropFlipkartShippingLabels(currentPdfBytes, {
-          selectedPages: pageIndices,
-          labelBox: currentLabelBox,
+        const shouldStamp = chkStampSku ? chkStampSku.checked : true;
+        outputBytes = await cropAmazonShippingLabels(currentPdfBytes, {
+          orders: ordersMetadata,
+          stampSku: shouldStamp,
         });
-        downloadFileName = `Flipkart_Cropped_Labels_${Date.now()}.pdf`;
       }
 
       const blob = new Blob([outputBytes], { type: 'application/pdf' });
@@ -595,7 +544,7 @@
       const a = document.createElement('a');
       a.style.display = 'none';
       a.href = url;
-      a.download = downloadFileName;
+      a.download = `Amazon_Cropped_Labels_${Date.now()}.pdf`;
       document.body.appendChild(a);
       a.click();
 
@@ -609,12 +558,12 @@
           particleCount: 90,
           spread: 75,
           origin: { y: 0.6 },
-          colors: confettiColors,
+          colors: ['#FF9900', '#131921', '#232F3E', '#FFFFFF'],
         });
       }
     } catch (err) {
-      console.error(err);
-      showToast('Error cropping PDF: ' + err.message, 'error');
+      console.error('Amazon PDF download error:', err);
+      showToast('Error cropping Amazon PDF: ' + err.message, 'error');
     } finally {
       buttons.forEach((btn) => {
         btn.disabled = false;
@@ -641,16 +590,11 @@
         let outputBytes;
         if (isImageMode && currentImageCropResult) {
           outputBytes = currentImageCropResult.pdfBytes;
-        } else if (currentMarketplace === 'amazon') {
-          outputBytes = await cropAmazonShippingLabels(currentPdfBytes, {
-            orders: pagesMetadata,
-            stampSku: true,
-          });
         } else {
-          const pageIndices = getPageIndices();
-          outputBytes = await cropFlipkartShippingLabels(currentPdfBytes, {
-            selectedPages: pageIndices,
-            labelBox: currentLabelBox,
+          const shouldStamp = chkStampSku ? chkStampSku.checked : true;
+          outputBytes = await cropAmazonShippingLabels(currentPdfBytes, {
+            orders: ordersMetadata,
+            stampSku: shouldStamp,
           });
         }
 
@@ -683,7 +627,7 @@
     });
   }
 
-  // Download Separate Invoices
+  // Download Separate Invoices (PDF)
   if (btnDownloadInvoices) {
     btnDownloadInvoices.addEventListener('click', async () => {
       if (!currentPdfBytes || isImageMode) return;
@@ -693,28 +637,16 @@
       btnDownloadInvoices.innerHTML = `<span>⏳ Extracting Invoices...</span>`;
 
       try {
-        let outputBytes;
-        let invoiceFileName = `Invoices_${Date.now()}.pdf`;
-
-        if (currentMarketplace === 'amazon') {
-          outputBytes = await extractAmazonInvoices(currentPdfBytes, {
-            orders: pagesMetadata,
-          });
-          invoiceFileName = `Amazon_Invoices_${Date.now()}.pdf`;
-        } else {
-          const pageIndices = getPageIndices();
-          outputBytes = await extractFlipkartInvoices(currentPdfBytes, {
-            selectedPages: pageIndices,
-          });
-          invoiceFileName = `Flipkart_Invoices_${Date.now()}.pdf`;
-        }
+        const outputBytes = await extractAmazonInvoices(currentPdfBytes, {
+          orders: ordersMetadata,
+        });
 
         const blob = new Blob([outputBytes], { type: 'application/pdf' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.style.display = 'none';
         a.href = url;
-        a.download = invoiceFileName;
+        a.download = `Amazon_Invoices_${Date.now()}.pdf`;
         document.body.appendChild(a);
         a.click();
 
@@ -739,7 +671,7 @@
       const url = URL.createObjectURL(currentImageCropResult.pngBlob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `Flipkart_Cropped_Label_${Date.now()}.png`;
+      a.download = `Amazon_Cropped_Label_${Date.now()}.png`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);

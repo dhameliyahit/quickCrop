@@ -105,3 +105,195 @@ async function parsePdfMetadata(pdfDoc, onProgress) {
   pagesData.detectedBox = detectedBox;
   return pagesData;
 }
+
+/**
+ * ============================================================================
+ * Amazon Shipping Label & Invoice Metadata Parser
+ * Dynamically detects 1-up, 2-up, or 3-up orders per A4 sheet
+ * Extracts Order ID, AWB, Delivery Station, Courier (ATSPL), SKU, Qty, and Payment
+ * ============================================================================
+ */
+async function parseAmazonPdfMetadata(pdfDoc, onProgress) {
+  const orders = [];
+  const numPages = pdfDoc.numPages;
+
+  for (let pageNum = 1; pageNum <= numPages; pageNum++) {
+    if (typeof onProgress === 'function') {
+      onProgress(pageNum, numPages);
+    }
+
+    const page = await pdfDoc.getPage(pageNum);
+    const viewport = page.getViewport({ scale: 1.0 });
+    const pageW = viewport.width || 595.28;
+    const pageH = viewport.height || 841.89;
+    const midX = pageW * 0.5;
+    const midY = pageH * 0.5;
+
+    const textContent = await page.getTextContent();
+    const items = textContent.items;
+
+    // Robust detection: inspect all text items on left half (shipping label column)
+    const leftItems = items.filter((it) => it.transform && it.transform[4] < midX + 10);
+    const topItems = leftItems.filter((it) => it.transform[5] >= midY - 20);
+    const bottomItems = leftItems.filter((it) => it.transform[5] < midY + 20);
+
+    const topText = topItems.map((it) => it.str).join(' ');
+    const bottomText = bottomItems.map((it) => it.str).join(' ');
+
+    const isOrderPresent = (t) => /AWB|Order|Ship|STVT|ATSPL|SUR|COD|PREPAID|Customer|Declaration|amazon|BOX/i.test(t);
+
+    const hasTopLabel = isOrderPresent(topText);
+    const hasBottomLabel = isOrderPresent(bottomText);
+
+    // Precise crop boundaries excluding dashed cut lines
+    const topLabelBox = {
+      x: 10,
+      y: Math.round(midY) + 5, // y = 426 pt (above horizontal dashed line at 421 pt)
+      width: Math.round(midX - 22), // width = 276 pt (left of vertical dashed line at 297 pt)
+      height: Math.round(pageH - midY - 16), // height = 405 pt
+    };
+    const topInvoiceBox = {
+      x: Math.round(midX) + 2,
+      y: Math.round(midY) + 5,
+      width: Math.round(midX - 10),
+      height: Math.round(pageH - midY - 16),
+    };
+
+    const bottomLabelBox = {
+      x: 10,
+      y: 12, // y = 12 pt (covers bottom ATSPL line)
+      width: Math.round(midX - 22), // width = 276 pt
+      height: Math.round(midY - 18), // height = 403 pt (safely below dashed line at 421 pt)
+    };
+    const bottomInvoiceBox = {
+      x: Math.round(midX) + 2,
+      y: 12,
+      width: Math.round(midX - 10),
+      height: Math.round(midY - 18),
+    };
+
+    let slots = [];
+    if (hasTopLabel && hasBottomLabel) {
+      // 2 orders on this page: Top order and Bottom order
+      slots = [
+        { index: 0, name: 'top', minY: midY, maxY: pageH, labelBox: topLabelBox, invoiceBox: topInvoiceBox },
+        { index: 1, name: 'bottom', minY: 0, maxY: midY, labelBox: bottomLabelBox, invoiceBox: bottomInvoiceBox },
+      ];
+    } else if (hasBottomLabel && !hasTopLabel) {
+      slots = [
+        { index: 0, name: 'bottom', minY: 0, maxY: midY, labelBox: bottomLabelBox, invoiceBox: bottomInvoiceBox },
+      ];
+    } else if (hasTopLabel && !hasBottomLabel) {
+      slots = [
+        { index: 0, name: 'top', minY: midY, maxY: pageH, labelBox: topLabelBox, invoiceBox: topInvoiceBox },
+      ];
+    } else {
+      // Fallback: Default to standard 2-up sheet so both labels are always captured
+      slots = [
+        { index: 0, name: 'top', minY: midY, maxY: pageH, labelBox: topLabelBox, invoiceBox: topInvoiceBox },
+        { index: 1, name: 'bottom', minY: 0, maxY: midY, labelBox: bottomLabelBox, invoiceBox: bottomInvoiceBox },
+      ];
+    }
+
+    // Process each slot on this page
+    for (const slot of slots) {
+      // Extract text on left half for label metadata
+      const leftItems = items.filter(
+        (it) => it.transform && it.transform[4] < midX && it.transform[5] >= slot.minY - 15 && it.transform[5] <= slot.maxY + 15
+      );
+      const leftText = leftItems.map((it) => it.str).join(' ');
+
+      // Extract text on right half for invoice metadata
+      const rightItems = items.filter(
+        (it) => it.transform && it.transform[4] >= midX - 10 && it.transform[5] >= slot.minY - 15 && it.transform[5] <= slot.maxY + 15
+      );
+      const rightText = rightItems.map((it) => it.str).join(' ');
+
+      // If neither side has order indicators, skip empty slot
+      if (!leftText.includes('Order') && !leftText.includes('AWB') && !rightText.includes('Order')) {
+        continue;
+      }
+
+      // Order ID (e.g. 407-5636330-3869926)
+      const orderIdMatch =
+        leftText.match(/Order\s*Id:?\s*([0-9]{3}-[0-9]{7}-[0-9]{7})/i) ||
+        rightText.match(/Order\s*Number:?\s*([0-9]{3}-[0-9]{7}-[0-9]{7})/i) ||
+        leftText.match(/([0-9]{3}-[0-9]{7}-[0-9]{7})/);
+      const orderId = orderIdMatch ? orderIdMatch[1] || orderIdMatch[0] : `Order #${orders.length + 1}`;
+
+      // AWB Number
+      const awbMatch = leftText.match(/AWB\s*([A-Z0-9]+)/i) || leftText.match(/AWB:?\s*([0-9]{8,16})/i);
+      const awbNo = awbMatch ? awbMatch[1] : 'AWB-N/A';
+
+      // Courier & Station
+      let courier = 'ATSPL';
+      if (leftText.includes('ATSPL')) courier = 'ATSPL';
+      else if (leftText.includes('Delhivery')) courier = 'Delhivery';
+      else if (leftText.includes('Blue Dart')) courier = 'Blue Dart';
+
+      const stationMatch = leftText.match(/DELIVERY\s*STATION\s*([A-Z0-9]+)/i);
+      const station = stationMatch ? stationMatch[1] : '';
+
+      // Payment Mode
+      const paymentMode = leftText.includes('COD') || rightText.includes('COD') ? 'COD' : 'PREPAID';
+
+      // SKU & Quantity Extraction from Invoice Description Table
+      let sku = '';
+      let qty = 1;
+
+      // 1. Try to extract parenthesized SKU: e.g. "B0H3FD6QS3 ( Fruit basket )"
+      const parenMatch = rightText.match(/\(\s*([^()]{2,60}?)\s*\)/);
+      if (parenMatch && parenMatch[1]) {
+        const candidate = parenMatch[1].trim();
+        // Ignore non-SKU parenthesized strings like "(Triplicate for Supplier)" or "( Fruit basket )"
+        if (!/triplicate|duplicate|original|supplier|only|resale/i.test(candidate)) {
+          sku = candidate;
+        }
+      }
+
+      // 2. If no parenthesized SKU, look in Description column
+      if (!sku) {
+        const descMatch = rightText.match(/Description[\s\S]*?(?:HSN|₹|Total|TOTAL|Unit Price)/i);
+        if (descMatch) {
+          const cleaned = descMatch[0]
+            .replace(/Description/i, '')
+            .replace(/(?:HSN|₹|Total|TOTAL|Unit Price)[\s\S]*/i, '')
+            .replace(/1\s+/g, '')
+            .trim();
+          if (cleaned.length > 2) {
+            sku = cleaned.split('|')[0].trim().substring(0, 45);
+          }
+        }
+      }
+
+      // Fallback SKU
+      if (!sku) {
+        sku = 'General Item';
+      }
+
+      // Quantity
+      const qtyMatch = rightText.match(/Qty\s*[:]?\s*(\d+)/i) || rightText.match(/₹[\d,.]+\s+(\d+)\s+₹/i);
+      if (qtyMatch && qtyMatch[1]) {
+        qty = parseInt(qtyMatch[1], 10) || 1;
+      }
+
+      orders.push({
+        orderIndex: orders.length,
+        orderId,
+        awbNo,
+        courier,
+        station,
+        sku,
+        qty,
+        paymentMode,
+        sourcePageIndex: pageNum - 1,
+        slotIndex: slot.index,
+        labelBox: slot.labelBox,
+        invoiceBox: slot.invoiceBox,
+        selected: true,
+      });
+    }
+  }
+
+  return orders;
+}

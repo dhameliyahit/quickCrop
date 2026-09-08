@@ -184,3 +184,296 @@ async function cropFlipkartLabelImage(imageFileOrBlob) {
     reader.readAsDataURL(imageFileOrBlob);
   });
 }
+
+/**
+ * ============================================================================
+ * Amazon Shipping Label & Invoice Engine
+ * Pure Vector Form XObject Embedding & MediaBox Formatting (TSC, Zebra, Xprinter)
+ * ============================================================================
+ */
+
+// Amazon Easy Ship standard A4 layout presets (595.28 x 841.89 pt)
+const AMAZON_LABEL_BOX_2UP_TOP = {
+  x: 10,
+  y: 426,
+  width: 276,
+  height: 405,
+};
+
+const AMAZON_LABEL_BOX_2UP_BOTTOM = {
+  x: 10,
+  y: 12,
+  width: 276,
+  height: 405,
+};
+
+const AMAZON_INVOICE_BOX_2UP_TOP = {
+  x: 298,
+  y: 426,
+  width: 290,
+  height: 405,
+};
+
+const AMAZON_INVOICE_BOX_2UP_BOTTOM = {
+  x: 298,
+  y: 12,
+  width: 290,
+  height: 405,
+};
+
+const AMAZON_THERMAL_PAGE = {
+  width: 288,  // 4 inches = 288 pt
+  height: 432, // 6 inches = 432 pt
+};
+
+/**
+ * Crops Amazon Shipping Labels from single-page or multi-page PDFs
+ * Formats each order into an individual 4x6" thermal page with pure vector barcode clarity
+ * Supports automatic SKU & Quantity stamping into the label's empty slot
+ */
+async function cropAmazonShippingLabels(pdfBytes, options = {}) {
+  const { PDFDocument, StandardFonts, rgb } = PDFLib;
+  const safeBytes = pdfBytes instanceof Uint8Array ? pdfBytes.slice() : new Uint8Array(pdfBytes.slice ? pdfBytes.slice(0) : pdfBytes);
+  const srcDoc = await PDFDocument.load(safeBytes);
+  const outDoc = await PDFDocument.create();
+
+  const orders = options.orders || [];
+  const stampSku = options.stampSku !== false;
+  let boldFont = null;
+
+  if (stampSku) {
+    try {
+      boldFont = await outDoc.embedFont(StandardFonts.HelveticaBold);
+    } catch (fontErr) {
+      console.warn('Could not embed bold font for SKU stamp:', fontErr);
+    }
+  }
+
+  // If parsed orders metadata is provided, process each order individually
+  if (orders.length > 0) {
+    for (const order of orders) {
+      const srcPageIndex = typeof order.sourcePageIndex === 'number' ? order.sourcePageIndex : 0;
+      if (srcPageIndex >= srcDoc.getPageCount()) continue;
+
+      const srcPage = srcDoc.getPage(srcPageIndex);
+      const box = order.labelBox || AMAZON_LABEL_BOX_2UP_TOP;
+
+      // Embed the vector bounding box of this label
+      const embeddedPage = await outDoc.embedPage(srcPage, {
+        left: box.x,
+        bottom: box.y,
+        right: box.x + box.width,
+        top: box.y + box.height,
+      });
+
+      const page = outDoc.addPage([AMAZON_THERMAL_PAGE.width, AMAZON_THERMAL_PAGE.height]);
+
+      // Center and fit within 4x6 page with safe 4pt margin
+      const margin = 4;
+      const availW = AMAZON_THERMAL_PAGE.width - margin * 2;
+      const availH = AMAZON_THERMAL_PAGE.height - margin * 2;
+      const scale = Math.min(availW / box.width, availH / box.height);
+
+      const drawW = box.width * scale;
+      const drawH = box.height * scale;
+      const drawX = (AMAZON_THERMAL_PAGE.width - drawW) / 2;
+      const drawY = (AMAZON_THERMAL_PAGE.height - drawH) / 2;
+
+      page.drawPage(embeddedPage, {
+        x: drawX,
+        y: drawY,
+        width: drawW,
+        height: drawH,
+      });
+
+      // Stamp SKU & Quantity into the label's empty gap if available
+      if (stampSku && boldFont && order.sku && order.sku !== 'General Item') {
+        const qtyPart = order.qty ? ` | Qty - ${order.qty}` : '';
+        const stampText = `${order.sku}${qtyPart}`;
+        const maxLen = 42;
+        const displayText = stampText.length > maxLen ? stampText.substring(0, maxLen - 1) + '…' : stampText;
+
+        page.drawText(displayText, {
+          x: Math.round(drawX + 16),
+          y: Math.round(drawY + 68),
+          size: 9.5,
+          font: boldFont,
+          color: rgb(0, 0, 0),
+        });
+      }
+    }
+  } else {
+    // Fallback: Default 2 orders per A4 page if no metadata passed
+    const totalPages = srcDoc.getPageCount();
+    for (let pIdx = 0; pIdx < totalPages; pIdx++) {
+      const srcPage = srcDoc.getPage(pIdx);
+      const boxes = [AMAZON_LABEL_BOX_2UP_TOP, AMAZON_LABEL_BOX_2UP_BOTTOM];
+
+      for (const box of boxes) {
+        const embeddedPage = await outDoc.embedPage(srcPage, {
+          left: box.x,
+          bottom: box.y,
+          right: box.x + box.width,
+          top: box.y + box.height,
+        });
+
+        const page = outDoc.addPage([AMAZON_THERMAL_PAGE.width, AMAZON_THERMAL_PAGE.height]);
+        const scale = Math.min((AMAZON_THERMAL_PAGE.width - 8) / box.width, (AMAZON_THERMAL_PAGE.height - 8) / box.height);
+        const drawW = box.width * scale;
+        const drawH = box.height * scale;
+
+        page.drawPage(embeddedPage, {
+          x: (AMAZON_THERMAL_PAGE.width - drawW) / 2,
+          y: (AMAZON_THERMAL_PAGE.height - drawH) / 2,
+          width: drawW,
+          height: drawH,
+        });
+      }
+    }
+  }
+
+  return await outDoc.save();
+}
+
+/**
+ * Extracts Tax Invoices from the right half of Amazon order sheets
+ */
+async function extractAmazonInvoices(pdfBytes, options = {}) {
+  const { PDFDocument } = PDFLib;
+  const safeBytes = pdfBytes instanceof Uint8Array ? pdfBytes.slice() : new Uint8Array(pdfBytes.slice ? pdfBytes.slice(0) : pdfBytes);
+  const srcDoc = await PDFDocument.load(safeBytes);
+  const outDoc = await PDFDocument.create();
+
+  const orders = options.orders || [];
+
+  if (orders.length > 0) {
+    for (const order of orders) {
+      const srcPageIndex = typeof order.sourcePageIndex === 'number' ? order.sourcePageIndex : 0;
+      if (srcPageIndex >= srcDoc.getPageCount()) continue;
+
+      const srcPage = srcDoc.getPage(srcPageIndex);
+      const invBox = order.invoiceBox || AMAZON_INVOICE_BOX_2UP_TOP;
+
+      const embeddedInv = await outDoc.embedPage(srcPage, {
+        left: invBox.x,
+        bottom: invBox.y,
+        right: invBox.x + invBox.width,
+        top: invBox.y + invBox.height,
+      });
+
+      const invPage = outDoc.addPage([invBox.width, invBox.height]);
+      invPage.drawPage(embeddedInv, {
+        x: 0,
+        y: 0,
+        width: invBox.width,
+        height: invBox.height,
+      });
+    }
+  } else {
+    // Fallback: Extract top and bottom right half
+    const totalPages = srcDoc.getPageCount();
+    for (let pIdx = 0; pIdx < totalPages; pIdx++) {
+      const srcPage = srcDoc.getPage(pIdx);
+      const boxes = [AMAZON_INVOICE_BOX_2UP_TOP, AMAZON_INVOICE_BOX_2UP_BOTTOM];
+
+      for (const invBox of boxes) {
+        const embeddedInv = await outDoc.embedPage(srcPage, {
+          left: invBox.x,
+          bottom: invBox.y,
+          right: invBox.x + invBox.width,
+          top: invBox.y + invBox.height,
+        });
+
+        const invPage = outDoc.addPage([invBox.width, invBox.height]);
+        invPage.drawPage(embeddedInv, {
+          x: 0,
+          y: 0,
+          width: invBox.width,
+          height: invBox.height,
+        });
+      }
+    }
+  }
+
+  return await outDoc.save();
+}
+
+/**
+ * Crops an Amazon shipping label from an uploaded image (PNG, JPG, WebP)
+ */
+async function cropAmazonLabelImage(imageFileOrBlob) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = function (e) {
+      const img = new Image();
+      img.onload = async function () {
+        try {
+          const imgWidth = img.naturalWidth || img.width;
+          const imgHeight = img.naturalHeight || img.height;
+          const aspectRatio = imgHeight / imgWidth;
+
+          let cropX, cropY, cropW, cropH;
+
+          // If full A4 Amazon order sheet (aspect ratio > 1.25)
+          if (aspectRatio > 1.25) {
+            // Label is in top-left or bottom-left: default to top-left shipping label
+            cropX = imgWidth * (10 / 595.28);
+            cropY = imgHeight * (14 / 841.89);
+            cropW = imgWidth * (280 / 595.28);
+            cropH = imgHeight * (410 / 841.89);
+          } else {
+            cropX = 0;
+            cropY = 0;
+            cropW = imgWidth;
+            cropH = imgHeight;
+          }
+
+          const canvas = document.createElement('canvas');
+          canvas.width = Math.round(cropW);
+          canvas.height = Math.round(cropH);
+          const ctx = canvas.getContext('2d');
+          ctx.fillStyle = '#FFFFFF';
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+          ctx.drawImage(
+            img,
+            cropX, cropY, cropW, cropH,
+            0, 0, canvas.width, canvas.height
+          );
+
+          const pngDataUrl = canvas.toDataURL('image/png', 1.0);
+          const pngBlob = await (await fetch(pngDataUrl)).blob();
+
+          const { PDFDocument } = PDFLib;
+          const pdfDoc = await PDFDocument.create();
+          const pngImage = await pdfDoc.embedPng(pngDataUrl);
+          const labelPage = pdfDoc.addPage([AMAZON_THERMAL_PAGE.width, AMAZON_THERMAL_PAGE.height]);
+
+          labelPage.drawImage(pngImage, {
+            x: 0,
+            y: 0,
+            width: AMAZON_THERMAL_PAGE.width,
+            height: AMAZON_THERMAL_PAGE.height,
+          });
+
+          const pdfBytes = await pdfDoc.save();
+
+          resolve({
+            pdfBytes,
+            pngBlob,
+            pngDataUrl,
+            canvas,
+            width: canvas.width,
+            height: canvas.height,
+          });
+        } catch (err) {
+          reject(err);
+        }
+      };
+      img.onerror = () => reject(new Error('Failed to load image file.'));
+      img.src = e.target.result;
+    };
+    reader.onerror = () => reject(new Error('Failed to read image file.'));
+    reader.readAsDataURL(imageFileOrBlob);
+  });
+}

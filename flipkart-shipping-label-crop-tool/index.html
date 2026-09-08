@@ -245,6 +245,7 @@
         <ul class="header-nav">
           <li><a href="/">All Tools</a></li>
           <li><a href="/flipkart-shipping-label-crop-tool/" class="active">Flipkart Tool</a></li>
+          <li><a href="/amazon-shipping-label-crop-tool/">Amazon Tool</a></li>
           <li><a href="#comparison-matrix">vs Competitors</a></li>
           <li><a href="/blogs/">Guides & Blogs</a></li>
           <li><a href="#printer-setup">Printer Setup</a></li>
@@ -268,6 +269,7 @@
           <button class="mobile-nav-link btn-install-pwa" type="button" style="border: none; cursor: pointer; color: #1E40AF !important; background: #FFFFFF; font-weight: 700; border-radius: 4px; padding: 0.25rem 0.65rem; margin-right: 0.35rem;">📲 Install App</button>
           <a href="/" class="mobile-nav-link">Marketplaces</a>
           <a href="/flipkart-shipping-label-crop-tool/" class="mobile-nav-link active">Flipkart Tool</a>
+          <a href="/amazon-shipping-label-crop-tool/" class="mobile-nav-link">Amazon Tool</a>
           <a href="#comparison-matrix" class="mobile-nav-link">vs Competitors</a>
           <a href="#how-to" class="mobile-nav-link">How to Use</a>
           <a href="#printer-setup" class="mobile-nav-link">Printer Settings</a>
@@ -280,17 +282,11 @@
       <!-- Main Tool Box -->
       <section class="tool-box">
         <div class="tool-header-block">
-          <div>
+          <div class="tool-header-left">
             <h1 class="tool-heading">Flipkart Shipping Label Crop Tool</h1>
             <p class="tool-description">
               Upload your Flipkart seller order PDF or label image below. QuickCrop automatically crops the exact shipping label box, removes the invoice, preserves crisp vector barcode quality, and groups by SKU for fast packing.
             </p>
-            <div style="margin-top: 0.65rem;">
-              <button class="hero-install-pill" id="hero-install-pill" type="button" aria-label="Install QuickCrop Web App">
-                <span class="pulse-dot"></span>
-                <span>📲 Install Web App for 1-Click Access</span>
-              </button>
-            </div>
           </div>
           <div class="tool-brand-pill">
             <img src="/assets/flipkart-logo.svg" alt="Official Flipkart Logo" width="180" height="48" />
@@ -325,6 +321,9 @@
           </div>
 
           <div class="upload-zone" id="dropzone">
+            <div class="upload-corner-badge flipkart-corner-badge" title="Official Flipkart Seller Hub Format">
+              <img src="/assets/flipkart-logo.svg" alt="Flipkart" width="84" height="22" />
+            </div>
             <input type="file" id="file-input" accept="application/pdf,.pdf,image/png,image/jpeg,image/webp" style="display: none;" />
             <svg class="upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
@@ -891,9 +890,9 @@
         <div class="footer-col">
           <h5>Marketplace Tools</h5>
           <ul>
+            <li><a href="/amazon-shipping-label-crop-tool/">Amazon Shipping Label Crop</a></li>
             <li><a href="/flipkart-shipping-label-crop-tool/">Flipkart Shipping Label Crop</a></li>
             <li><a href="/#marketplaces">Meesho Label Cropper (Coming Soon)</a></li>
-            <li><a href="/#marketplaces">Amazon Easy Ship Crop (Coming Soon)</a></li>
             <li><a href="/blogs/how-to-print-flipkart-labels-thermal-printer/">Flipkart Thermal Print Guide</a></li>
             <li><a href="/blogs/flipkart-shipping-label-size-guide/">Flipkart Label Size Guide</a></li>
           </ul>
