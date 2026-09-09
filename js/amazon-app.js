@@ -15,6 +15,8 @@
 
   let currentImageCropResult = null;
   let isImageMode = false;
+  const defaultDocTitle = document.title;
+  let activeDocTitle = defaultDocTitle;
 
   // DOM Elements
   const dropzone = document.getElementById('dropzone');
@@ -100,6 +102,7 @@
   // Loading State Helpers
   function showLoading(title, desc, status, fileName) {
     hideError();
+    document.title = '⏳ Processing Amazon Labels... — QuickCrop';
     if (loadingState) {
       loadingState.style.display = 'block';
       if (loadingTitle) loadingTitle.textContent = title || 'Processing Amazon Shipping Labels...';
@@ -196,12 +199,27 @@
       currentImageCropResult = null;
       isImageMode = false;
       if (fileInput) fileInput.value = '';
+      activeDocTitle = defaultDocTitle;
+      document.title = defaultDocTitle;
       hideLoading();
       hideError();
       resultCard.style.display = 'none';
       uploadArea.style.display = 'block';
     });
   }
+
+  // Dynamic tab title visibility handler
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      if (ordersMetadata && ordersMetadata.length > 0) {
+        document.title = `📦 (${ordersMetadata.length} Orders Ready) Print Amazon Labels — QuickCrop`;
+      } else {
+        document.title = '⚡ Free Amazon Easy Ship Label Cropper — QuickCrop';
+      }
+    } else {
+      document.title = activeDocTitle;
+    }
+  });
 
   // Toggle SKU stamping re-render
   if (chkStampSku) {
@@ -332,6 +350,8 @@
       if (orderCountDisplay) {
         const isGrouped = ordersMetadata.length > 1;
         orderCountDisplay.textContent = `${ordersMetadata.length} Order${ordersMetadata.length > 1 ? 's' : ''} Ready${isGrouped ? ' (Grouped by SKU)' : ''}`;
+        activeDocTitle = `✅ (${ordersMetadata.length} Amazon Orders Ready) - QuickCrop`;
+        document.title = activeDocTitle;
       }
 
       if (btnDownloadInvoices) btnDownloadInvoices.style.display = 'inline-flex';

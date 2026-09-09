@@ -4,6 +4,16 @@
   "trailingSlash": true,
   "redirects": [
     {
+      "source": "/amazon-shipping-label-crop-tool/:path*",
+      "destination": "/amazon-easy-ship-label-crop-tool/",
+      "permanent": true
+    },
+    {
+      "source": "/amazon-shipping-label-crop-tool",
+      "destination": "/amazon-easy-ship-label-crop-tool/",
+      "permanent": true
+    },
+    {
       "source": "/:path*",
       "has": [
         {

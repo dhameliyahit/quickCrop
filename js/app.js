@@ -16,6 +16,8 @@
   let currentImageCropResult = null;
   let isImageMode = false;
   let currentMarketplace = 'flipkart';
+  const defaultDocTitle = document.title;
+  let activeDocTitle = defaultDocTitle;
 
   // DOM Elements
   const dropzone = document.getElementById('dropzone');
@@ -100,6 +102,7 @@
   // Loading State Helpers
   function showLoading(title, desc, status, fileName) {
     hideError();
+    document.title = '⏳ Processing Labels... — QuickCrop';
     if (loadingState) {
       loadingState.style.display = 'block';
       if (loadingTitle) loadingTitle.textContent = title || 'Processing Shipping Labels...';
@@ -196,12 +199,27 @@
       isImageMode = false;
       currentLabelBox = FLIPKART_LABEL_BOX;
       if (fileInput) fileInput.value = '';
+      activeDocTitle = defaultDocTitle;
+      document.title = defaultDocTitle;
       hideLoading();
       hideError();
       resultCard.style.display = 'none';
       uploadArea.style.display = 'block';
     });
   }
+
+  // Dynamic tab title visibility handler
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      if (pagesMetadata && pagesMetadata.length > 0) {
+        document.title = `📦 (${pagesMetadata.length} Orders Ready) Print 4x6 Labels — QuickCrop`;
+      } else {
+        document.title = '⚡ Free 4x6 Shipping Label Cropper — QuickCrop';
+      }
+    } else {
+      document.title = activeDocTitle;
+    }
+  });
 
   // Determine file type and delegate with complete error validation
   async function loadSelectedFile(file) {
@@ -352,6 +370,8 @@
         const isGrouped = pagesMetadata.length > 1;
         const brand = currentMarketplace === 'amazon' ? 'Amazon ' : 'Flipkart ';
         orderCountDisplay.textContent = `${pagesMetadata.length} ${brand}Order${pagesMetadata.length > 1 ? 's' : ''} Ready${isGrouped ? ' (Grouped by SKU)' : ''}`;
+        activeDocTitle = `✅ (${pagesMetadata.length} ${brand}Orders Ready) - QuickCrop`;
+        document.title = activeDocTitle;
       }
 
       if (btnDownloadInvoices) btnDownloadInvoices.style.display = 'inline-flex';

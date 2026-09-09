@@ -153,10 +153,10 @@ async function parseAmazonPdfMetadata(pdfDoc, onProgress) {
       height: Math.round(pageH - midY - 16), // height = 405 pt
     };
     const topInvoiceBox = {
-      x: Math.round(midX) + 2,
-      y: Math.round(midY) + 5,
-      width: Math.round(midX - 10),
-      height: Math.round(pageH - midY - 16),
+      x: Math.round(midX) - 8,
+      y: Math.max(0, Math.round(midY) - 8),
+      width: Math.round(midX) + 8,
+      height: Math.round(pageH - midY) + 10, // reaches top edge of page
     };
 
     const bottomLabelBox = {
@@ -166,10 +166,10 @@ async function parseAmazonPdfMetadata(pdfDoc, onProgress) {
       height: Math.round(midY - 18), // height = 403 pt (safely below dashed line at 421 pt)
     };
     const bottomInvoiceBox = {
-      x: Math.round(midX) + 2,
-      y: 12,
-      width: Math.round(midX - 10),
-      height: Math.round(midY - 18),
+      x: Math.round(midX) - 8,
+      y: 0,
+      width: Math.round(midX) + 8,
+      height: Math.round(midY) + 14, // reaches past mid divider to capture full header
     };
 
     let slots = [];

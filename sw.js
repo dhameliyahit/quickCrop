@@ -3,7 +3,7 @@
  * Provides offline caching, lightning-fast loads, and PWA installability.
  */
 
-const CACHE_NAME = 'quickcrop-v9';
+const CACHE_NAME = 'quickcrop-v10';
 const isLocalhost = Boolean(
   self.location.hostname === 'localhost' ||
   self.location.hostname === '[::1]' ||
@@ -14,14 +14,22 @@ const PRECACHE_ASSETS = [
   '/index.html',
   '/flipkart-shipping-label-crop-tool/',
   '/flipkart-shipping-label-crop-tool/index.html',
-  '/amazon-shipping-label-crop-tool/',
-  '/amazon-shipping-label-crop-tool/index.html',
+  '/amazon-easy-ship-label-crop-tool/',
+  '/amazon-easy-ship-label-crop-tool/index.html',
+  '/blogs/',
+  '/blogs/index.html',
+  '/blogs/how-to-crop-amazon-easy-ship-labels-thermal-printer/',
+  '/blogs/how-to-print-sku-quantity-amazon-shipping-labels/',
+  '/blogs/amazon-easy-ship-label-size-and-thermal-printer-settings/',
+  '/blogs/how-to-separate-amazon-tax-invoices-and-shipping-labels/',
   '/css/style.css',
   '/js/app.js',
   '/js/amazon-app.js',
   '/js/pdf-cropper.js',
   '/js/pdf-parser.js',
   '/js/pwa.js',
+  '/assets/favicon.svg',
+  '/favicon.ico',
   '/assets/logo.svg',
   '/assets/app-icon.svg',
   '/assets/icon-192.png',

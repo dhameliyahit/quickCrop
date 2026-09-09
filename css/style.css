@@ -76,6 +76,25 @@ a:hover {
   width: 100%;
 }
 
+.site-header.header-amazon {
+  background: #131921;
+  box-shadow: 0 2px 12px rgba(19, 25, 33, 0.4);
+}
+
+.site-header.header-amazon .mobile-nav-bar {
+  background: #232F3E;
+}
+
+.site-header.header-amazon .header-nav .btn-nav-action {
+  background: #FF9900;
+  color: #111827;
+}
+
+.site-header.header-amazon .header-nav .btn-nav-action:hover {
+  background: #FA8900;
+  color: #000000;
+}
+
 .header-inner {
   max-width: 1160px;
   margin: 0 auto;
@@ -263,10 +282,10 @@ a:hover {
 /* Marketplace Switcher Grid */
 .marketplace-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 1rem;
-  max-width: 1040px;
-  margin: 0 auto 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.15rem;
+  max-width: 1160px;
+  margin: 0 auto 1.5rem;
   text-align: left;
 }
 
@@ -382,6 +401,13 @@ a:hover {
   background: #FFFDF9;
 }
 
+.marketplace-card.active-amazon-easyship {
+  border-color: #FF9900;
+  border-width: 2px;
+  background: linear-gradient(180deg, #FFFDF8 0%, #FFF8ED 100%);
+  box-shadow: 0 4px 18px rgba(255, 153, 0, 0.12);
+}
+
 .btn-amazon {
   background: #FF9900;
   color: #111827;
@@ -394,6 +420,20 @@ a:hover {
   background: #FA8900;
   color: #000000;
   box-shadow: 0 4px 14px rgba(255, 153, 0, 0.35);
+  transform: translateY(-1px);
+}
+
+.btn-amazon-dark {
+  background: #232F3E;
+  color: #FFFFFF;
+  font-weight: 700;
+  border: 1px solid #131921;
+}
+
+.btn-amazon-dark:hover {
+  background: #131921;
+  color: #FF9900;
+  box-shadow: 0 4px 12px rgba(19, 25, 33, 0.3);
   transform: translateY(-1px);
 }
 

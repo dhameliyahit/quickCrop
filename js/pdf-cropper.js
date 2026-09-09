@@ -23,11 +23,12 @@ const FLIPKART_LABEL_BOX_LEFT = {
 // Default to standard right-aligned Flipkart layout
 const FLIPKART_LABEL_BOX = FLIPKART_LABEL_BOX_RIGHT;
 
+// Flipkart invoice box on bottom of A4 sheet (extended height to 515 to capture entire top header and prevent clipping)
 const FLIPKART_INVOICE_BOX = {
-  x: 10,
-  y: 10,
-  width: 575,
-  height: 440,
+  x: 0,
+  y: 0,
+  width: 595.28,
+  height: 515,
 };
 
 /**
@@ -69,6 +70,7 @@ async function cropFlipkartShippingLabels(pdfBytes, options = {}) {
 
 /**
  * Extracts Only Tax Invoices (bottom portion of Flipkart order pages)
+ * Uses embedPage with top padding to guarantee zero header clipping
  */
 async function extractFlipkartInvoices(pdfBytes, options = {}) {
   const { PDFDocument } = PDFLib;
@@ -79,23 +81,30 @@ async function extractFlipkartInvoices(pdfBytes, options = {}) {
   const totalPages = srcDoc.getPageCount();
   const pageIndices = options.selectedPages || Array.from({ length: totalPages }, (_, i) => i);
 
-  const copiedPages = await outDoc.copyPages(srcDoc, pageIndices);
+  const invCaptureH = FLIPKART_INVOICE_BOX.height; // 515 pt
+  const topPadding = 24; // Generous breathing room on top of invoice
 
-  for (const page of copiedPages) {
-    page.setCropBox(
-      FLIPKART_INVOICE_BOX.x,
-      FLIPKART_INVOICE_BOX.y,
-      FLIPKART_INVOICE_BOX.width,
-      FLIPKART_INVOICE_BOX.height
-    );
-    page.setMediaBox(
-      FLIPKART_INVOICE_BOX.x,
-      FLIPKART_INVOICE_BOX.y,
-      FLIPKART_INVOICE_BOX.width,
-      FLIPKART_INVOICE_BOX.height
-    );
+  for (const pageIdx of pageIndices) {
+    if (pageIdx >= totalPages) continue;
+    const srcPage = srcDoc.getPage(pageIdx);
+    const { width: pageW, height: pageH } = srcPage.getSize();
+    const w = pageW || FLIPKART_INVOICE_BOX.width;
+    const captureH = Math.min(pageH || 841.89, invCaptureH);
 
-    outDoc.addPage(page);
+    const embeddedInv = await outDoc.embedPage(srcPage, {
+      left: 0,
+      bottom: 0,
+      right: w,
+      top: captureH,
+    });
+
+    const invPage = outDoc.addPage([w, captureH + topPadding]);
+    invPage.drawPage(embeddedInv, {
+      x: 0,
+      y: 0,
+      width: w,
+      height: captureH,
+    });
   }
 
   return await outDoc.save();
@@ -208,17 +217,17 @@ const AMAZON_LABEL_BOX_2UP_BOTTOM = {
 };
 
 const AMAZON_INVOICE_BOX_2UP_TOP = {
-  x: 298,
-  y: 426,
-  width: 290,
-  height: 405,
+  x: 288,
+  y: 412,
+  width: 304,
+  height: 430, // reaches 842 pt (captures entire top header of sheet)
 };
 
 const AMAZON_INVOICE_BOX_2UP_BOTTOM = {
-  x: 298,
-  y: 12,
-  width: 290,
-  height: 405,
+  x: 288,
+  y: 0,
+  width: 304,
+  height: 434, // reaches 434 pt (captures entire top header above mid divider)
 };
 
 const AMAZON_THERMAL_PAGE = {
@@ -361,7 +370,8 @@ async function extractAmazonInvoices(pdfBytes, options = {}) {
         top: invBox.y + invBox.height,
       });
 
-      const invPage = outDoc.addPage([invBox.width, invBox.height]);
+      const topPadding = 24; // Generous top padding for separated invoice page
+      const invPage = outDoc.addPage([invBox.width, invBox.height + topPadding]);
       invPage.drawPage(embeddedInv, {
         x: 0,
         y: 0,
@@ -384,7 +394,8 @@ async function extractAmazonInvoices(pdfBytes, options = {}) {
           top: invBox.y + invBox.height,
         });
 
-        const invPage = outDoc.addPage([invBox.width, invBox.height]);
+        const topPadding = 24;
+        const invPage = outDoc.addPage([invBox.width, invBox.height + topPadding]);
         invPage.drawPage(embeddedInv, {
           x: 0,
           y: 0,

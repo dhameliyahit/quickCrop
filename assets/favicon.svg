@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1E40AF"/>
+      <stop offset="45%" stop-color="#2874F0"/>
+      <stop offset="100%" stop-color="#0284C7"/>
+    </linearGradient>
+    <linearGradient id="scissorGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFE500"/>
+      <stop offset="100%" stop-color="#FB641B"/>
+    </linearGradient>
+    <filter id="cardShadow" x="-15%" y="-15%" width="130%" height="130%">
+      <feDropShadow dx="0" dy="12" stdDeviation="16" flood-color="#000000" flood-opacity="0.28"/>
+    </filter>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="4" stdDeviation="8" flood-color="#FFE500" flood-opacity="0.5"/>
+    </filter>
+  </defs>
+
+  <!-- Squircle Base -->
+  <rect width="512" height="512" rx="120" fill="url(#bgGrad)"/>
+
+  <!-- Subtle Border Ring -->
+  <rect x="8" y="8" width="496" height="496" rx="112" fill="none" stroke="#FFFFFF" stroke-opacity="0.15" stroke-width="8"/>
+
+  <!-- White Shipping Label Card -->
+  <g filter="url(#cardShadow)">
+    <rect x="100" y="84" width="312" height="344" rx="22" fill="#FFFFFF"/>
+    
+    <!-- Top Header Bar -->
+    <rect x="124" y="108" width="264" height="30" rx="8" fill="#F1F5F9"/>
+    <circle cx="144" cy="123" r="6" fill="#2874F0"/>
+    <rect x="160" y="118" width="80" height="10" rx="5" fill="#94A3B8"/>
+    <rect x="330" y="118" width="42" height="10" rx="5" fill="#2874F0"/>
+
+    <!-- Sharp Thermal Vector Barcode -->
+    <g fill="#0F172A">
+      <rect x="132" y="156" width="12" height="74" rx="2"/>
+      <rect x="150" y="156" width="6" height="74" rx="1"/>
+      <rect x="162" y="156" width="18" height="74" rx="2"/>
+      <rect x="186" y="156" width="8" height="74" rx="1"/>
+      <rect x="200" y="156" width="5" height="74" rx="1"/>
+      <rect x="211" y="156" width="15" height="74" rx="2"/>
+      <rect x="232" y="156" width="10" height="74" rx="1"/>
+      <rect x="248" y="156" width="18" height="74" rx="2"/>
+      <rect x="272" y="156" width="6" height="74" rx="1"/>
+      <rect x="284" y="156" width="14" height="74" rx="2"/>
+      <rect x="304" y="156" width="16" height="74" rx="2"/>
+      <rect x="326" y="156" width="8" height="74" rx="1"/>
+      <rect x="340" y="156" width="20" height="74" rx="2"/>
+      <rect x="366" y="156" width="10" height="74" rx="1"/>
+    </g>
+    <text x="256" y="248" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="16" font-weight="800" fill="#475569" text-anchor="middle" letter-spacing="4">4×6 THERMAL</text>
+
+    <!-- Cut Line -->
+    <line x1="112" y1="280" x2="400" y2="280" stroke="#FB641B" stroke-width="5" stroke-dasharray="12 10" stroke-linecap="round"/>
+
+    <!-- Bottom Invoice Ghost Lines (Showing separation) -->
+    <rect x="124" y="304" width="150" height="12" rx="6" fill="#E2E8F0"/>
+    <rect x="124" y="328" width="220" height="10" rx="5" fill="#F1F5F9"/>
+    <rect x="124" y="348" width="180" height="10" rx="5" fill="#F1F5F9"/>
+    <rect x="124" y="368" width="100" height="10" rx="5" fill="#F1F5F9"/>
+    <rect x="320" y="358" width="68" height="22" rx="6" fill="#E2E8F0"/>
+  </g>
+
+  <!-- Glowing Scissor Badge -->
+  <g filter="url(#glow)">
+    <!-- Scissor Circle Badge -->
+    <circle cx="396" cy="280" r="44" fill="#0F172A" stroke="#FFFFFF" stroke-width="4"/>
+    <!-- Scissor Icon in Yellow/Orange -->
+    <g transform="translate(376, 260) scale(1.6)" stroke="url(#scissorGrad)" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="6" cy="6" r="3"/>
+      <circle cx="6" cy="18" r="3"/>
+      <line x1="20" y1="4" x2="8.12" y2="15.88"/>
+      <line x1="14.47" y1="14.48" x2="20" y2="20"/>
+      <line x1="8.12" y1="8.12" x2="12" y2="12"/>
+    </g>
+  </g>
+</svg>
