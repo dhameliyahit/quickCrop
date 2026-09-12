@@ -8,9 +8,21 @@
 
   let deferredInstallPrompt = null;
 
-  // Register Service Worker
+  // Register Service Worker (Production only; auto-clear on localhost)
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
+      if (location.hostname === 'localhost' || location.hostname === '127.0.0.1' || location.hostname === '[::1]') {
+        navigator.serviceWorker.getRegistrations().then(regs => {
+          for (const reg of regs) reg.unregister();
+        });
+        if ('caches' in window) {
+          caches.keys().then(names => {
+            for (const name of names) caches.delete(name);
+          });
+        }
+        return;
+      }
+
       navigator.serviceWorker.register('/sw.js')
         .then((reg) => {
           console.log('[QuickCrop] Service Worker registered with scope:', reg.scope);

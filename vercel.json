@@ -14,6 +14,11 @@
       "permanent": true
     },
     {
+      "source": "/blogs/:slug.html",
+      "destination": "/blogs/:slug/",
+      "permanent": true
+    },
+    {
       "source": "/:path*",
       "has": [
         {

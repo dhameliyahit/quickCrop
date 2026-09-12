@@ -3,7 +3,7 @@
  * Provides offline caching, lightning-fast loads, and PWA installability.
  */
 
-const CACHE_NAME = 'quickcrop-v10';
+const CACHE_NAME = 'quickcrop-v11';
 const isLocalhost = Boolean(
   self.location.hostname === 'localhost' ||
   self.location.hostname === '[::1]' ||
