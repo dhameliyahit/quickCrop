@@ -3,7 +3,7 @@
  * Provides offline caching, lightning-fast loads, and PWA installability.
  */
 
-const CACHE_NAME = 'quickcrop-v11';
+const CACHE_NAME = 'quickcrop-v12';
 const isLocalhost = Boolean(
   self.location.hostname === 'localhost' ||
   self.location.hostname === '[::1]' ||
@@ -12,6 +12,10 @@ const isLocalhost = Boolean(
 const PRECACHE_ASSETS = [
   '/',
   '/index.html',
+  '/about.html',
+  '/contact.html',
+  '/privacy-policy.html',
+  '/terms-and-conditions.html',
   '/flipkart-shipping-label-crop-tool/',
   '/flipkart-shipping-label-crop-tool/index.html',
   '/amazon-easy-ship-label-crop-tool/',

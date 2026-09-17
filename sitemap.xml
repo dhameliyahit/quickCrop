@@ -85,14 +85,26 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://www.quickcrop.online/about.html</loc>
+    <lastmod>2026-09-17</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://www.quickcrop.online/contact.html</loc>
+    <lastmod>2026-09-17</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://www.quickcrop.online/privacy-policy.html</loc>
-    <lastmod>2026-09-12</lastmod>
+    <lastmod>2026-09-17</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://www.quickcrop.online/terms-and-conditions.html</loc>
-    <lastmod>2026-09-12</lastmod>
+    <lastmod>2026-09-17</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
