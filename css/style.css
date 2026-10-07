@@ -1,7 +1,7 @@
 /* ==========================================================================
    QuickCrop Design System - 100% Mobile Responsive & Modern
    High-converting aesthetic for Indian E-Commerce Sellers
-   Flipkart Blue (#2874F0), Yellow (#FFE500), Meesho (#9B277B)
+   Flipkart Blue (#2874F0), Yellow (#FFE500), Amazon Orange (#FF9900)
    ========================================================================== */
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap');
@@ -12,7 +12,6 @@
   --accent-yellow: #FFE500;
   --accent-orange: #FB641B;
   --accent-orange-hover: #E85307;
-  --meesho-pink: #9B277B;
   --amazon-orange: #FF9900;
   --bg-main: #F1F3F6;
   --bg-card: #FFFFFF;
@@ -77,14 +76,24 @@ a:hover {
 }
 
 .site-header.header-amazon {
-  background: #131921;
-  box-shadow: 0 2px 12px rgba(19, 25, 33, 0.4);
+  background: #FFFFFF;
+  color: #1E293B;
+  border-bottom: 2px solid #FF9900;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+.site-header.header-amazon .brand-title {
+  color: #0F172A;
+}
+
+.site-header.header-amazon .header-nav a {
+  color: #475569;
 }
 
 .site-header.header-amazon .header-nav a:hover,
 .site-header.header-amazon .header-nav a.active {
-  background: rgba(255, 153, 0, 0.2);
-  color: #FF9900;
+  background: #FEF3C7;
+  color: #92400E;
 }
 
 .site-header.header-amazon .header-nav .btn-nav-action {
@@ -103,13 +112,13 @@ a:hover {
 }
 
 .site-header.header-amazon .mobile-nav-bar {
-  background: #232F3E;
-  border-bottom: 1px solid rgba(255, 153, 0, 0.25);
+  background: #FFFDF8;
+  border-bottom: 1px solid #FDE68A;
 }
 
 .site-header.header-amazon .mobile-nav-link {
-  color: #E2E8F0;
-  background: rgba(255, 255, 255, 0.08);
+  color: #475569;
+  background: #F1F5F9;
 }
 
 .site-header.header-amazon .mobile-nav-link.active,
@@ -504,15 +513,30 @@ a:hover {
   transform: translateY(-1px);
 }
 
+.btn-amazon-print {
+  background: #0F766E;
+  color: #FFFFFF;
+  font-weight: 700;
+  border: 1px solid #0D9488;
+  box-shadow: 0 2px 6px rgba(15, 118, 110, 0.2);
+}
+
+.btn-amazon-print:hover {
+  background: #115E59;
+  color: #FFFFFF;
+  box-shadow: 0 4px 12px rgba(15, 118, 110, 0.35);
+  transform: translateY(-1px);
+}
+
 .btn-dark {
-  background: #232F3E;
+  background: #334155;
   color: #FFFFFF;
 }
 
 .btn-dark:hover {
-  background: #131A22;
+  background: #1E293B;
   color: #FFFFFF;
-  box-shadow: 0 4px 12px rgba(19, 26, 34, 0.25);
+  box-shadow: 0 4px 12px rgba(30, 41, 59, 0.25);
   transform: translateY(-1px);
 }
 

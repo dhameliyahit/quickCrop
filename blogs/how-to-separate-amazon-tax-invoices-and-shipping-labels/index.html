@@ -49,7 +49,13 @@
     <link rel="stylesheet" href="/css/style.css" />
 
     <!-- Favicon -->
+        <!-- Favicon & Touch Icons for Google Search & Browsers -->
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" sizes="48x48 32x32 16x16" />
+    <link rel="icon" type="image/png" sizes="48x48" href="/assets/favicon-48x48.png" />
+    <link rel="icon" type="image/png" sizes="96x96" href="/assets/favicon-96x96.png" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/assets/icon-192.png" />
     <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png" />
     <link rel="shortcut icon" href="/favicon.ico" />
 
     <!-- JSON-LD Structured Data (BlogPosting, BreadcrumbList, FAQPage) -->
@@ -172,21 +178,35 @@
         <article class="article-body" style="font-size: 1.05rem; line-height: 1.75; color: #334155;">
           <h2>Why Amazon Bundles Labels and Invoices Together</h2>
           <p>
-            When Amazon launched Easy Ship in India, it combined the shipping label and the customer invoice into a single A4 PDF file. While this made sense for sellers using standard desktop laser printers and A4 sheets, it creates two major problems for modern e-commerce sellers using 4x6" direct thermal printers:
+            When downloading orders from Amazon Seller Central, Amazon frequently generates a multi-page PDF where each customer order contains two pages:
+          </p>
+          <ul>
+            <li><strong>Page 1 (Odd Pages: 1, 3, 5, 7...):</strong> The actual Shipping Label containing the ATSPL barcode, tracking ID, customer delivery address, and carrier routing station.</li>
+            <li><strong>Page 2 (Even Pages: 2, 4, 6, 8...):</strong> The Customer Tax Invoice and packing slip containing order pricing, HSN codes, and GST breakdown.</li>
+          </ul>
+          <p>
+            For example, if you download a batch of 3 orders, Amazon delivers a <strong>6-page PDF</strong>. If you send this directly to your 4x6" thermal printer, the printer will waste expensive thermal stickers on pages 2, 4, and 6 (the invoices).
+          </p>
+
+          <h2>How to Crop 6-Page (Multi-Page) Amazon PDFs: Keep Pages 1, 3, 5 &amp; Remove Pages 2, 4, 6</h2>
+          <p>
+            QuickCrop automatically detects alternating multi-page Amazon PDFs and separates them with zero manual effort:
           </p>
           <ol>
-            <li><strong>Thermal Paper Waste:</strong> If you accidentally print both sides on thermal paper, you spend valuable sticker rolls on invoices that end up in the trash or inside package envelopes.</li>
-            <li><strong>The Fading Problem:</strong> Direct thermal paper works via heat-activated chemical coating. Over 3 to 6 months, exposure to ambient heat, light, and humidity turns thermal receipts pale and illegible. You cannot rely on physical thermal paper for GST tax audits.</li>
+            <li><strong>Auto-Detects Order Pairs:</strong> Page 1 is linked to Page 2, Page 3 to Page 4, and Page 5 to Page 6.</li>
+            <li><strong>Isolates Shipping Labels:</strong> Pages 1, 3, and 5 are extracted, converted into pure vector 4x6" thermal labels, and prepared for instant printing.</li>
+            <li><strong>Extracts SKUs from Invoices:</strong> QuickCrop reads the item SKU and quantity from the invoice pages (2, 4, 6) and auto-stamps them directly onto the shipping labels (1, 3, 5).</li>
+            <li><strong>Separates Invoices for GST:</strong> Pages 2, 4, and 6 are compiled into a separate, clean PDF archive that you can download with one click for your monthly GST accountant.</li>
           </ol>
 
           <h2>The 1-Click Separation Workflow with QuickCrop</h2>
           <p>
-            <a href="/amazon-easy-ship-label-crop-tool/" style="color: #D97706; font-weight: 700;">QuickCrop's Amazon Shipping Tool</a> solves this effortlessly:
+            <a href="/amazon-easy-ship-label-crop-tool/" style="color: #D97706; font-weight: 700;">QuickCrop's Amazon Shipping Tool</a> solves this in 3 simple steps:
           </p>
           <ul>
-            <li><strong>Step 1:</strong> Upload your original Amazon Easy Ship or Self Ship PDF file.</li>
-            <li><strong>Step 2:</strong> QuickCrop isolates the shipping labels on the left and prepares your 4×6" thermal sticker batch.</li>
-            <li><strong>Step 3:</strong> Click the <strong>Download Invoices Only (PDF)</strong> button. QuickCrop extracts all tax invoices from the right side and combines them into an organized, clean PDF file.</li>
+            <li><strong>Step 1:</strong> Upload your original Amazon Easy Ship or Self Ship PDF file (whether it is 2 pages, 6 pages, 20 pages, or 2-on-1 A4 sheets).</li>
+            <li><strong>Step 2:</strong> QuickCrop automatically removes the invoice pages from the thermal print batch and shows a real-time 4×6" preview.</li>
+            <li><strong>Step 3:</strong> Click <strong>Download Cropped Shipping Labels (PDF)</strong> for your thermal printer, and click <strong>Download Invoices Only (PDF)</strong> for your digital accounting records.</li>
           </ul>
 
           <h2>Benefits for Your Monthly GSTR-1 and GSTR-3B Filing</h2>
@@ -194,13 +214,13 @@
             By keeping your invoices in a separate digital PDF:
           </p>
           <ul>
-            <li><strong>Organized Folders:</strong> You can save monthly files like <code>Amazon_Invoices_September_2026.pdf</code> directly to Google Drive or your local accounting folder.</li>
-            <li><strong>Easy Sharing with CA:</strong> Send the invoices PDF directly to your Chartered Accountant or tax consultant for GSTR-1 B2C sales reconciliation.</li>
-            <li><strong>Audit Ready:</strong> If GST authorities request verification of invoice serial numbers or HSN codes, you have clean digital records available on demand.</li>
+            <li><strong>Zero Thermal Sticker Waste:</strong> You save up to 50% on thermal paper rolls every single month.</li>
+            <li><strong>Organized Digital Records:</strong> Save files like <code>Amazon_Invoices_September_2026.pdf</code> directly to Google Drive or your local accounting folder.</li>
+            <li><strong>Audit Ready for 6 Years:</strong> While thermal prints fade within 3-6 months, your digital PDF invoices comply fully with Section 36 of the CGST Act for standard 6-year tax audits.</li>
           </ul>
 
           <div style="text-align: center; margin: 3rem 0; padding: 2rem; background: #FFFDF8; border: 2px solid #FF9900; border-radius: var(--radius-md);">
-            <h3 style="margin-bottom: 0.5rem; font-size: 1.4rem;">Separate Amazon Invoices in 1-Click</h3>
+            <h3 style="margin-bottom: 0.5rem; font-size: 1.4rem;">Crop Amazon Labels &amp; Separate Invoices in 1-Click</h3>
             <p style="color: #64748B; margin-bottom: 1.25rem;">100% Free • Private client-side processing • Save thermal roll costs</p>
             <a href="/amazon-easy-ship-label-crop-tool/" class="btn btn-amazon" style="display: inline-flex; padding: 0.85rem 1.75rem; font-size: 1rem; border-radius: var(--radius-sm);">
               Crop Labels &amp; Extract Invoices Free →
@@ -215,10 +235,10 @@
           <div class="footer-col">
             <h5 style="color: #FFFFFF; font-size: 1.1rem; margin-bottom: 1rem;">QuickCrop</h5>
             <p style="line-height: 1.6; margin-bottom: 0.8rem; font-size: 0.9rem; color: #94A3B8;">
-              The fast, 100% free, client-side shipping label cropper for Indian e-commerce sellers on Flipkart, Amazon Easy Ship, and Meesho.
+              The fast, 100% free, client-side shipping label cropper for Indian e-commerce sellers on Flipkart and Amazon Easy Ship.
             </p>
             <p style="font-size: 0.75rem; color: #64748B;">
-              Disclaimer: QuickCrop is an independent utility and is not affiliated with Flipkart, Amazon, or Meesho.
+              Disclaimer: QuickCrop is an independent utility and is not affiliated with Flipkart or Amazon.
             </p>
           </div>
 

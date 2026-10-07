@@ -348,8 +348,14 @@
         fileSizeDisplay.textContent = sizeKb >= 1024 ? (sizeKb / 1024).toFixed(2) + ' MB' : sizeKb.toFixed(1) + ' KB';
       }
       if (orderCountDisplay) {
-        const isGrouped = ordersMetadata.length > 1;
-        orderCountDisplay.textContent = `${ordersMetadata.length} Order${ordersMetadata.length > 1 ? 's' : ''} Ready${isGrouped ? ' (Grouped by SKU)' : ''}`;
+        const isAlternating = ordersMetadata.some((o) => o.mode === 'alternating-pages');
+        let countLabel = `${ordersMetadata.length} Order${ordersMetadata.length > 1 ? 's' : ''} Ready`;
+        if (isAlternating && totalPages > ordersMetadata.length) {
+          countLabel += ` (Odd Pages 1, 3, 5... Extracted • Invoices Separated)`;
+        } else if (ordersMetadata.length > 1) {
+          countLabel += ' (Grouped by SKU)';
+        }
+        orderCountDisplay.textContent = countLabel;
         activeDocTitle = `✅ (${ordersMetadata.length} Amazon Orders Ready) - QuickCrop`;
         document.title = activeDocTitle;
       }
@@ -453,7 +459,9 @@
       stepperRow.style.display = 'none';
     } else {
       stepperRow.style.display = 'flex';
-      if (pageIndicator) pageIndicator.textContent = `Order ${currentOrderIndex + 1} of ${ordersMetadata.length}`;
+      const order = ordersMetadata[currentOrderIndex];
+      const pageInfo = order && typeof order.sourcePageIndex === 'number' ? ` (Page ${order.sourcePageIndex + 1})` : '';
+      if (pageIndicator) pageIndicator.textContent = `Order ${currentOrderIndex + 1} of ${ordersMetadata.length}${pageInfo}`;
       if (prevPageBtn) prevPageBtn.disabled = currentOrderIndex <= 0;
       if (nextPageBtn) nextPageBtn.disabled = currentOrderIndex >= ordersMetadata.length - 1;
     }
@@ -468,9 +476,10 @@
     if (!order) return;
 
     if (orderMetaDisplay) {
-      const skuText = order.sku && order.sku !== 'General Item' ? ` • SKU: ${order.sku} (Qty: ${order.qty || 1})` : '';
+      const skuText = order.sku && order.sku !== 'Amazon Item' && order.sku !== 'General Item' && order.sku !== 'Amazon Order' ? ` • SKU: ${order.sku} (Qty: ${order.qty || 1})` : '';
       const stationText = order.station ? ` [${order.station}]` : '';
-      orderMetaDisplay.textContent = `${order.orderId} • ${order.courier}${stationText}${skuText}`;
+      const pageText = typeof order.sourcePageIndex === 'number' ? ` • Page ${order.sourcePageIndex + 1}` : '';
+      orderMetaDisplay.textContent = `${order.orderId} • ${order.courier}${stationText}${skuText}${pageText}`;
     }
 
     try {
@@ -488,12 +497,7 @@
 
       await page.render({ canvasContext: offCtx, viewport: renderViewport }).promise;
 
-      // Extract coordinates from order.labelBox
-      const box = order.labelBox || AMAZON_LABEL_BOX_2UP_TOP;
-      const cropW = box.width;
-      const cropH = box.height;
-
-      // Output canvas aspect ratio 4x6
+      // Output canvas aspect ratio 4x6 (288x432 pt)
       const targetCanvasW = Math.round(288 * (previewScale / 1.5));
       const targetCanvasH = Math.round(432 * (previewScale / 1.5));
 
@@ -504,32 +508,62 @@
       ctx.fillStyle = '#FFFFFF';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      // PDF coordinate conversion: (0,0) is bottom-left
-      const srcX = box.x * previewScale;
-      const srcY = (a4Height - (box.y + cropH)) * previewScale;
-      const srcW = cropW * previewScale;
-      const srcH = cropH * previewScale;
+      if (order.labelBox) {
+        // Extract coordinates from order.labelBox
+        const box = order.labelBox;
+        const cropW = box.width;
+        const cropH = box.height;
 
-      // Draw centered within 4x6 canvas
-      const scaleFit = Math.min((targetCanvasW - 12) / srcW, (targetCanvasH - 12) / srcH);
-      const destW = srcW * scaleFit;
-      const destH = srcH * scaleFit;
-      const destX = (targetCanvasW - destW) / 2;
-      const destY = (targetCanvasH - destH) / 2;
+        // PDF coordinate conversion: (0,0) is bottom-left
+        const srcX = box.x * previewScale;
+        const srcY = (a4Height - (box.y + cropH)) * previewScale;
+        const srcW = cropW * previewScale;
+        const srcH = cropH * previewScale;
 
-      ctx.drawImage(offscreen, srcX, srcY, srcW, srcH, destX, destY, destW, destH);
+        // Draw centered within 4x6 canvas
+        const scaleFit = Math.min((targetCanvasW - 12) / srcW, (targetCanvasH - 12) / srcH);
+        const destW = srcW * scaleFit;
+        const destH = srcH * scaleFit;
+        const destX = (targetCanvasW - destW) / 2;
+        const destY = (targetCanvasH - destH) / 2;
 
-      // Render SKU & Quantity stamp overlay if checkbox is checked
-      const shouldStamp = chkStampSku ? chkStampSku.checked : true;
-      if (shouldStamp && order.sku && order.sku !== 'General Item') {
-        ctx.fillStyle = '#000000';
-        ctx.font = 'bold 13px Inter, sans-serif';
-        const qtyPart = order.qty ? ` | Qty - ${order.qty}` : '';
-        const stampText = `${order.sku}${qtyPart}`;
-        // Draw into the designated white gap between declaration table and bottom routing box
-        const stampX = destX + 16 * (destW / cropW);
-        const stampY = destY + destH - 72 * (destH / cropH);
-        ctx.fillText(stampText, stampX, stampY);
+        ctx.drawImage(offscreen, srcX, srcY, srcW, srcH, destX, destY, destW, destH);
+
+        // Render SKU & Quantity stamp overlay if checkbox is checked
+        const shouldStamp = chkStampSku ? chkStampSku.checked : true;
+        if (shouldStamp && order.sku && order.sku !== 'Amazon Item' && order.sku !== 'General Item') {
+          ctx.fillStyle = '#000000';
+          ctx.font = 'bold 13px Inter, sans-serif';
+          const qtyPart = order.qty ? ` | Qty - ${order.qty}` : '';
+          const stampText = `${order.sku}${qtyPart}`;
+          const stampX = destX + 16 * (destW / cropW);
+          const stampY = destY + destH - 72 * (destH / cropH);
+          ctx.fillText(stampText, stampX, stampY);
+        }
+      } else {
+        // Full page label (Odd page e.g. 1, 3, 5)
+        const srcW = renderViewport.width;
+        const srcH = renderViewport.height;
+
+        const scaleFit = Math.min((targetCanvasW - 16) / srcW, (targetCanvasH - 16) / srcH);
+        const destW = srcW * scaleFit;
+        const destH = srcH * scaleFit;
+        const destX = (targetCanvasW - destW) / 2;
+        const destY = (targetCanvasH - destH) / 2;
+
+        ctx.drawImage(offscreen, 0, 0, srcW, srcH, destX, destY, destW, destH);
+
+        // Render SKU & Quantity stamp overlay inside the whitespace gap (matches crp-amz.png)
+        const shouldStamp = chkStampSku ? chkStampSku.checked : true;
+        if (shouldStamp && order.sku && order.sku !== 'Amazon Item' && order.sku !== 'General Item' && order.sku !== 'Amazon Order') {
+          ctx.fillStyle = '#000000';
+          ctx.font = 'bold 13px Inter, sans-serif';
+          const qty = order.qty || 1;
+          const stampText = `${order.sku} | Qty - ${qty}`;
+          const stampX = destX + destW * 0.14;
+          const stampY = destY + destH - (destH * 0.165);
+          ctx.fillText(stampText, stampX, stampY);
+        }
       }
     } catch (err) {
       console.error('Amazon render error:', err);

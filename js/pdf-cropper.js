@@ -265,60 +265,13 @@ async function cropAmazonShippingLabels(pdfBytes, options = {}) {
       if (srcPageIndex >= srcDoc.getPageCount()) continue;
 
       const srcPage = srcDoc.getPage(srcPageIndex);
-      const box = order.labelBox || AMAZON_LABEL_BOX_2UP_TOP;
-
-      // Embed the vector bounding box of this label
-      const embeddedPage = await outDoc.embedPage(srcPage, {
-        left: box.x,
-        bottom: box.y,
-        right: box.x + box.width,
-        top: box.y + box.height,
-      });
+      const { width: srcW, height: srcH } = srcPage.getSize();
 
       const page = outDoc.addPage([AMAZON_THERMAL_PAGE.width, AMAZON_THERMAL_PAGE.height]);
 
-      // Center and fit within 4x6 page with safe 4pt margin
-      const margin = 4;
-      const availW = AMAZON_THERMAL_PAGE.width - margin * 2;
-      const availH = AMAZON_THERMAL_PAGE.height - margin * 2;
-      const scale = Math.min(availW / box.width, availH / box.height);
-
-      const drawW = box.width * scale;
-      const drawH = box.height * scale;
-      const drawX = (AMAZON_THERMAL_PAGE.width - drawW) / 2;
-      const drawY = (AMAZON_THERMAL_PAGE.height - drawH) / 2;
-
-      page.drawPage(embeddedPage, {
-        x: drawX,
-        y: drawY,
-        width: drawW,
-        height: drawH,
-      });
-
-      // Stamp SKU & Quantity into the label's empty gap if available
-      if (stampSku && boldFont && order.sku && order.sku !== 'General Item') {
-        const qtyPart = order.qty ? ` | Qty - ${order.qty}` : '';
-        const stampText = `${order.sku}${qtyPart}`;
-        const maxLen = 42;
-        const displayText = stampText.length > maxLen ? stampText.substring(0, maxLen - 1) + '…' : stampText;
-
-        page.drawText(displayText, {
-          x: Math.round(drawX + 16),
-          y: Math.round(drawY + 68),
-          size: 9.5,
-          font: boldFont,
-          color: rgb(0, 0, 0),
-        });
-      }
-    }
-  } else {
-    // Fallback: Default 2 orders per A4 page if no metadata passed
-    const totalPages = srcDoc.getPageCount();
-    for (let pIdx = 0; pIdx < totalPages; pIdx++) {
-      const srcPage = srcDoc.getPage(pIdx);
-      const boxes = [AMAZON_LABEL_BOX_2UP_TOP, AMAZON_LABEL_BOX_2UP_BOTTOM];
-
-      for (const box of boxes) {
+      if (order.labelBox) {
+        // Bounding box cropping (e.g. 2-up split sheet)
+        const box = order.labelBox;
         const embeddedPage = await outDoc.embedPage(srcPage, {
           left: box.x,
           bottom: box.y,
@@ -326,10 +279,94 @@ async function cropAmazonShippingLabels(pdfBytes, options = {}) {
           top: box.y + box.height,
         });
 
-        const page = outDoc.addPage([AMAZON_THERMAL_PAGE.width, AMAZON_THERMAL_PAGE.height]);
-        const scale = Math.min((AMAZON_THERMAL_PAGE.width - 8) / box.width, (AMAZON_THERMAL_PAGE.height - 8) / box.height);
+        const margin = 4;
+        const availW = AMAZON_THERMAL_PAGE.width - margin * 2;
+        const availH = AMAZON_THERMAL_PAGE.height - margin * 2;
+        const scale = Math.min(availW / box.width, availH / box.height);
+
         const drawW = box.width * scale;
         const drawH = box.height * scale;
+        const drawX = (AMAZON_THERMAL_PAGE.width - drawW) / 2;
+        const drawY = (AMAZON_THERMAL_PAGE.height - drawH) / 2;
+
+        page.drawPage(embeddedPage, {
+          x: drawX,
+          y: drawY,
+          width: drawW,
+          height: drawH,
+        });
+
+        // Stamp SKU & Quantity into the label's empty gap if available
+        if (stampSku && boldFont && order.sku && order.sku !== 'Amazon Item' && order.sku !== 'General Item') {
+          const qtyPart = order.qty ? ` | Qty - ${order.qty}` : '';
+          const stampText = `${order.sku}${qtyPart}`;
+          const maxLen = 42;
+          const displayText = stampText.length > maxLen ? stampText.substring(0, maxLen - 1) + '…' : stampText;
+
+          page.drawText(displayText, {
+            x: Math.round(drawX + 16),
+            y: Math.round(drawY + 68),
+            size: 9.5,
+            font: boldFont,
+            color: rgb(0, 0, 0),
+          });
+        }
+      } else {
+        // Full page label (e.g. Odd page from alternating 2-page-per-order PDF or 4x6 label)
+        const embeddedPage = await outDoc.embedPage(srcPage);
+        const margin = 6;
+        const availW = AMAZON_THERMAL_PAGE.width - margin * 2;
+        const availH = AMAZON_THERMAL_PAGE.height - margin * 2;
+        const scale = Math.min(availW / srcW, availH / srcH);
+
+        const drawW = srcW * scale;
+        const drawH = srcH * scale;
+        const drawX = (AMAZON_THERMAL_PAGE.width - drawW) / 2;
+        const drawY = (AMAZON_THERMAL_PAGE.height - drawH) / 2;
+
+        page.drawPage(embeddedPage, {
+          x: drawX,
+          y: drawY,
+          width: drawW,
+          height: drawH,
+        });
+
+        // Stamp SKU & Quantity inside the blank whitespace right above the bottom routing box (matches crp-amz.png)
+        if (stampSku && boldFont && order.sku && order.sku !== 'Amazon Item' && order.sku !== 'General Item' && order.sku !== 'Amazon Order') {
+          const qty = order.qty || 1;
+          const stampText = `${order.sku} | Qty - ${qty}`;
+          const maxLen = 42;
+          const displayText = stampText.length > maxLen ? stampText.substring(0, maxLen - 1) + '…' : stampText;
+
+          // Exact placement: in the white gap above STXA routing boxes
+          const stampX = Math.round(drawX + drawW * 0.14);
+          const stampY = Math.round(drawY + drawH * 0.165);
+
+          page.drawText(displayText, {
+            x: stampX,
+            y: stampY,
+            size: 10.5,
+            font: boldFont,
+            color: rgb(0, 0, 0),
+          });
+        }
+      }
+    }
+  } else {
+    // Fallback: Check if alternating odd pages or 2-up sheet
+    const totalPages = srcDoc.getPageCount();
+    if (totalPages >= 2) {
+      // Extract odd pages (0, 2, 4...)
+      for (let pIdx = 0; pIdx < totalPages; pIdx += 2) {
+        const srcPage = srcDoc.getPage(pIdx);
+        const { width: srcW, height: srcH } = srcPage.getSize();
+        const embeddedPage = await outDoc.embedPage(srcPage);
+        const page = outDoc.addPage([AMAZON_THERMAL_PAGE.width, AMAZON_THERMAL_PAGE.height]);
+
+        const margin = 6;
+        const scale = Math.min((AMAZON_THERMAL_PAGE.width - margin * 2) / srcW, (AMAZON_THERMAL_PAGE.height - margin * 2) / srcH);
+        const drawW = srcW * scale;
+        const drawH = srcH * scale;
 
         page.drawPage(embeddedPage, {
           x: (AMAZON_THERMAL_PAGE.width - drawW) / 2,
@@ -338,6 +375,21 @@ async function cropAmazonShippingLabels(pdfBytes, options = {}) {
           height: drawH,
         });
       }
+    } else {
+      const srcPage = srcDoc.getPage(0);
+      const { width: srcW, height: srcH } = srcPage.getSize();
+      const embeddedPage = await outDoc.embedPage(srcPage);
+      const page = outDoc.addPage([AMAZON_THERMAL_PAGE.width, AMAZON_THERMAL_PAGE.height]);
+      const scale = Math.min((AMAZON_THERMAL_PAGE.width - 12) / srcW, (AMAZON_THERMAL_PAGE.height - 12) / srcH);
+      const drawW = srcW * scale;
+      const drawH = srcH * scale;
+
+      page.drawPage(embeddedPage, {
+        x: (AMAZON_THERMAL_PAGE.width - drawW) / 2,
+        y: (AMAZON_THERMAL_PAGE.height - drawH) / 2,
+        width: drawW,
+        height: drawH,
+      });
     }
   }
 
@@ -345,7 +397,7 @@ async function cropAmazonShippingLabels(pdfBytes, options = {}) {
 }
 
 /**
- * Extracts Tax Invoices from the right half of Amazon order sheets
+ * Extracts Tax Invoices from Amazon order sheets or multi-page documents (Even pages 2, 4, 6...)
  */
 async function extractAmazonInvoices(pdfBytes, options = {}) {
   const { PDFDocument } = PDFLib;
@@ -357,36 +409,20 @@ async function extractAmazonInvoices(pdfBytes, options = {}) {
 
   if (orders.length > 0) {
     for (const order of orders) {
-      const srcPageIndex = typeof order.sourcePageIndex === 'number' ? order.sourcePageIndex : 0;
-      if (srcPageIndex >= srcDoc.getPageCount()) continue;
+      if (typeof order.invoicePageIndex === 'number') {
+        // Multi-page alternating invoice (Even page e.g. Page 2, 4, 6)
+        if (order.invoicePageIndex < srcDoc.getPageCount()) {
+          const [copiedPage] = await outDoc.copyPages(srcDoc, [order.invoicePageIndex]);
+          outDoc.addPage(copiedPage);
+        }
+      } else if (order.invoiceBox) {
+        // Split sheet invoice box
+        const srcPageIndex = typeof order.sourcePageIndex === 'number' ? order.sourcePageIndex : 0;
+        if (srcPageIndex >= srcDoc.getPageCount()) continue;
 
-      const srcPage = srcDoc.getPage(srcPageIndex);
-      const invBox = order.invoiceBox || AMAZON_INVOICE_BOX_2UP_TOP;
+        const srcPage = srcDoc.getPage(srcPageIndex);
+        const invBox = order.invoiceBox || AMAZON_INVOICE_BOX_2UP_TOP;
 
-      const embeddedInv = await outDoc.embedPage(srcPage, {
-        left: invBox.x,
-        bottom: invBox.y,
-        right: invBox.x + invBox.width,
-        top: invBox.y + invBox.height,
-      });
-
-      const topPadding = 24; // Generous top padding for separated invoice page
-      const invPage = outDoc.addPage([invBox.width, invBox.height + topPadding]);
-      invPage.drawPage(embeddedInv, {
-        x: 0,
-        y: 0,
-        width: invBox.width,
-        height: invBox.height,
-      });
-    }
-  } else {
-    // Fallback: Extract top and bottom right half
-    const totalPages = srcDoc.getPageCount();
-    for (let pIdx = 0; pIdx < totalPages; pIdx++) {
-      const srcPage = srcDoc.getPage(pIdx);
-      const boxes = [AMAZON_INVOICE_BOX_2UP_TOP, AMAZON_INVOICE_BOX_2UP_BOTTOM];
-
-      for (const invBox of boxes) {
         const embeddedInv = await outDoc.embedPage(srcPage, {
           left: invBox.x,
           bottom: invBox.y,
@@ -402,6 +438,19 @@ async function extractAmazonInvoices(pdfBytes, options = {}) {
           width: invBox.width,
           height: invBox.height,
         });
+      }
+    }
+  } else {
+    // Fallback: Copy all even pages if multi-page document
+    const totalPages = srcDoc.getPageCount();
+    if (totalPages > 1) {
+      const evenPageIndices = [];
+      for (let p = 1; p < totalPages; p += 2) {
+        evenPageIndices.push(p);
+      }
+      if (evenPageIndices.length > 0) {
+        const copiedPages = await outDoc.copyPages(srcDoc, evenPageIndices);
+        copiedPages.forEach((cp) => outDoc.addPage(cp));
       }
     }
   }
