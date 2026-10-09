@@ -141,13 +141,19 @@ async function parseAmazonPdfMetadata(pdfDoc, onProgress) {
     const hasInvoiceText = /Tax\s*Invoice|Invoice\s*Number|GSTIN|HSN|Sold\s*By|Bill\s*To|Billing\s*Address|Invoice\s*Date|Unit\s*Price|Authorized\s*Signatory|Total\s*Amount/i.test(fullText);
 
     // Also check left vs right distribution (for 2-on-1 sheets)
-    const leftItems = items.filter((it) => it.transform && it.transform[4] < midX + 15);
-    const rightItems = items.filter((it) => it.transform && it.transform[4] >= midX - 15);
+    const leftItems = items.filter((it) => !it.transform || it.transform[4] < midX + 15);
+    const rightItems = items.filter((it) => !it.transform || it.transform[4] >= midX - 15);
     const leftText = leftItems.map((it) => it.str).join(' ');
     const rightText = rightItems.map((it) => it.str).join(' ');
 
     const isLeftLabel = /AWB|Order|Ship|STVT|ATSPL|SUR|COD|PREPAID|Customer|Declaration|amazon|BOX/i.test(leftText);
-    const isRightInvoice = /Invoice|GSTIN|Sold\s*By|Order\s*Number|HSN|Unit\s*Price|Total/i.test(rightText);
+    const isRightInvoice = /Invoice|GSTIN|Sold\s*By|Order\s*Number|HSN|Unit\s*Price|Total|Tax/i.test(rightText);
+
+    // A split sheet has page width > 500pt and contains both shipping label and tax invoice text
+    const isSplitSheet = pageW > 500 && (
+      (isLeftLabel && isRightInvoice) ||
+      (hasLabelText && hasInvoiceText)
+    );
 
     pagesInfo.push({
       pageNum,
@@ -164,30 +170,27 @@ async function parseAmazonPdfMetadata(pdfDoc, onProgress) {
       hasInvoiceText,
       isLeftLabel,
       isRightInvoice,
-      isSplitSheet: isLeftLabel && isRightInvoice && pageW > 500,
+      isSplitSheet,
     });
   }
 
   // 2. Multi-page Amazon / Thermal PDF Handling
-  // Rule: Odd pages (1, 3, 5...) are Shipping Labels (to print), Even pages (2, 4, 6...) are Invoices (to separate & extract SKU/Qty)
+  // Alternating format ONLY applies when pages are NOT split sheets!
   let isAlternatingFormat = false;
   const hasSplitSheets = pagesInfo.some((p) => p.isSplitSheet);
 
-  if (numPages >= 2 && !hasSplitSheets) {
-    isAlternatingFormat = true;
-  } else if (numPages >= 2) {
-    // Check if odd pages look like shipping labels or even pages look like invoices
+  if (!hasSplitSheets && numPages >= 2) {
     let oddPagesLookLikeLabels = false;
     let evenPagesLookLikeInvoices = false;
     for (let i = 0; i < numPages; i += 2) {
-      if (pagesInfo[i] && (pagesInfo[i].hasLabelText || pagesInfo[i].isLeftLabel)) {
+      if (pagesInfo[i] && pagesInfo[i].hasLabelText) {
         oddPagesLookLikeLabels = true;
       }
-      if (pagesInfo[i + 1] && (pagesInfo[i + 1].hasInvoiceText || pagesInfo[i + 1].isRightInvoice)) {
+      if (pagesInfo[i + 1] && pagesInfo[i + 1].hasInvoiceText) {
         evenPagesLookLikeInvoices = true;
       }
     }
-    if (oddPagesLookLikeLabels || evenPagesLookLikeInvoices) {
+    if (oddPagesLookLikeLabels && evenPagesLookLikeInvoices) {
       isAlternatingFormat = true;
     }
   }
@@ -412,20 +415,21 @@ async function parseAmazonPdfMetadata(pdfDoc, onProgress) {
 
     for (const slot of slots) {
       const slotLeftItems = items.filter(
-        (it) => it.transform && it.transform[4] < midX + 15 && it.transform[5] >= slot.minY - 15 && it.transform[5] <= slot.maxY + 15
+        (it) => !it.transform || (it.transform[4] < midX + 15 && it.transform[5] >= slot.minY - 15 && it.transform[5] <= slot.maxY + 15)
       );
       const slotLeftText = slotLeftItems.map((it) => it.str).join(' ');
 
       const slotRightItems = items.filter(
-        (it) => it.transform && it.transform[4] >= midX - 15 && it.transform[5] >= slot.minY - 15 && it.transform[5] <= slot.maxY + 15
+        (it) => !it.transform || (it.transform[4] >= midX - 15 && it.transform[5] >= slot.minY - 15 && it.transform[5] <= slot.maxY + 15)
       );
       const slotRightText = slotRightItems.map((it) => it.str).join(' ');
 
-      if (slot.labelBox && !slotLeftText.includes('Order') && !slotLeftText.includes('AWB') && !slotRightText.includes('Order') && !slotLeftText.includes('ATSPL')) {
+      const combinedSlotText = `${slotLeftText} ${slotRightText}`;
+      const hasSlotText = /Order|AWB|ATSPL|Ship|SUR|COD|PREPAID|Customer|Declaration|amazon|BOX|Invoice|Tax|GSTIN/i.test(combinedSlotText);
+
+      if (slot.labelBox && !hasSlotText && combinedSlotText.trim().length === 0) {
         continue;
       }
-
-      const combinedSlotText = `${slotLeftText} ${slotRightText}`;
 
       const orderIdMatch =
         combinedSlotText.match(/([0-9]{3}-[0-9]{7}-[0-9]{7})/) ||

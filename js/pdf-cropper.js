@@ -353,18 +353,47 @@ async function cropAmazonShippingLabels(pdfBytes, options = {}) {
       }
     }
   } else {
-    // Fallback: Check if alternating odd pages or 2-up sheet
+    // Fallback: If metadata orders not provided, process each page in the PDF
     const totalPages = srcDoc.getPageCount();
-    if (totalPages >= 2) {
-      // Extract odd pages (0, 2, 4...)
-      for (let pIdx = 0; pIdx < totalPages; pIdx += 2) {
-        const srcPage = srcDoc.getPage(pIdx);
-        const { width: srcW, height: srcH } = srcPage.getSize();
-        const embeddedPage = await outDoc.embedPage(srcPage);
-        const page = outDoc.addPage([AMAZON_THERMAL_PAGE.width, AMAZON_THERMAL_PAGE.height]);
+    for (let pIdx = 0; pIdx < totalPages; pIdx++) {
+      const srcPage = srcDoc.getPage(pIdx);
+      const { width: srcW, height: srcH } = srcPage.getSize();
+      const page = outDoc.addPage([AMAZON_THERMAL_PAGE.width, AMAZON_THERMAL_PAGE.height]);
 
+      if (srcW > 500) {
+        // Standard A4 sheet: crop top-left shipping label box
+        const box = AMAZON_LABEL_BOX_2UP_TOP;
+        const embeddedPage = await outDoc.embedPage(srcPage, {
+          left: box.x,
+          bottom: box.y,
+          right: box.x + box.width,
+          top: box.y + box.height,
+        });
+
+        const margin = 4;
+        const availW = AMAZON_THERMAL_PAGE.width - margin * 2;
+        const availH = AMAZON_THERMAL_PAGE.height - margin * 2;
+        const scale = Math.min(availW / box.width, availH / box.height);
+
+        const drawW = box.width * scale;
+        const drawH = box.height * scale;
+        const drawX = (AMAZON_THERMAL_PAGE.width - drawW) / 2;
+        const drawY = (AMAZON_THERMAL_PAGE.height - drawH) / 2;
+
+        page.drawPage(embeddedPage, {
+          x: drawX,
+          y: drawY,
+          width: drawW,
+          height: drawH,
+        });
+      } else {
+        // 4x6 Direct Thermal page
+        const embeddedPage = await outDoc.embedPage(srcPage);
         const margin = 6;
-        const scale = Math.min((AMAZON_THERMAL_PAGE.width - margin * 2) / srcW, (AMAZON_THERMAL_PAGE.height - margin * 2) / srcH);
+        const availW = AMAZON_THERMAL_PAGE.width - margin * 2;
+        const availH = AMAZON_THERMAL_PAGE.height - margin * 2;
+        const scale = Math.min(availW / srcW, availH / srcH);
+
         const drawW = srcW * scale;
         const drawH = srcH * scale;
 
@@ -375,21 +404,6 @@ async function cropAmazonShippingLabels(pdfBytes, options = {}) {
           height: drawH,
         });
       }
-    } else {
-      const srcPage = srcDoc.getPage(0);
-      const { width: srcW, height: srcH } = srcPage.getSize();
-      const embeddedPage = await outDoc.embedPage(srcPage);
-      const page = outDoc.addPage([AMAZON_THERMAL_PAGE.width, AMAZON_THERMAL_PAGE.height]);
-      const scale = Math.min((AMAZON_THERMAL_PAGE.width - 12) / srcW, (AMAZON_THERMAL_PAGE.height - 12) / srcH);
-      const drawW = srcW * scale;
-      const drawH = srcH * scale;
-
-      page.drawPage(embeddedPage, {
-        x: (AMAZON_THERMAL_PAGE.width - drawW) / 2,
-        y: (AMAZON_THERMAL_PAGE.height - drawH) / 2,
-        width: drawW,
-        height: drawH,
-      });
     }
   }
 
