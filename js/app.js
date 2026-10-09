@@ -6,6 +6,8 @@
 (function () {
   'use strict';
 
+  const UI = window.QuickCropUI;
+
   // Global State
   let currentPdfBytes = null;
   let currentPdfDocProxy = null;
@@ -17,7 +19,9 @@
   let isImageMode = false;
   let currentMarketplace = 'flipkart';
   const defaultDocTitle = document.title;
-  let activeDocTitle = defaultDocTitle;
+
+  // Shared reusable offscreen canvas to prevent memory allocations on frame render
+  let sharedOffscreenCanvas = null;
 
   // DOM Elements
   const dropzone = document.getElementById('dropzone');
@@ -31,18 +35,7 @@
   const orderCountDisplay = document.getElementById('order-count');
   const changeFileBtn = document.getElementById('btn-change-file');
 
-  const loadingState = document.getElementById('loading-state');
-  const loadingTitle = document.getElementById('loading-title');
-  const loadingDesc = document.getElementById('loading-desc');
-  const loadingStatus = document.getElementById('loading-status');
-  const loadingBar = document.getElementById('loading-progress-bar');
-  const loadingFilePill = document.getElementById('loading-file-pill');
-  const loadingFileName = document.getElementById('loading-file-name');
-
-  // Error Card Elements
   const cropperErrorCard = document.getElementById('cropper-error-card');
-  const cropperErrorTitle = document.getElementById('cropper-error-title');
-  const cropperErrorDesc = document.getElementById('cropper-error-desc');
   const btnErrorRetry = document.getElementById('btn-error-retry');
   const btnErrorDismiss = document.getElementById('btn-error-dismiss');
 
@@ -60,125 +53,22 @@
   const btnDownloadInvoices = document.getElementById('btn-download-invoices');
   const btnDownloadPng = document.getElementById('btn-download-png');
 
-  // Error State Display
-  function showError(title, desc) {
-    hideLoading();
-    if (resultCard) resultCard.style.display = 'none';
-    if (uploadArea) uploadArea.style.display = 'block';
-
-    if (cropperErrorCard) {
-      if (cropperErrorTitle) cropperErrorTitle.textContent = title || 'Unable to Process Label File';
-      if (cropperErrorDesc) cropperErrorDesc.textContent = desc || 'Please ensure this is a valid Flipkart shipping label PDF or image.';
-      cropperErrorCard.style.display = 'flex';
-      cropperErrorCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    }
-  }
-
-  function hideError() {
-    if (cropperErrorCard) {
-      cropperErrorCard.style.display = 'none';
-    }
-  }
-
-  // Toast Notification
-  function showToast(message, type = 'info') {
-    const existing = document.querySelector('.cropper-toast');
-    if (existing) existing.remove();
-
-    const toast = document.createElement('div');
-    toast.className = `cropper-toast toast-${type}`;
-    toast.setAttribute('role', 'status');
-    toast.textContent = message;
-    document.body.appendChild(toast);
-
-    setTimeout(() => {
-      toast.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
-      toast.style.opacity = '0';
-      toast.style.transform = 'translateY(10px)';
-      setTimeout(() => toast.remove(), 300);
-    }, 4000);
-  }
-
-  // Loading State Helpers
-  function showLoading(title, desc, status, fileName) {
-    hideError();
-    document.title = '⏳ Processing Labels... — QuickCrop';
-    if (loadingState) {
-      loadingState.style.display = 'block';
-      if (loadingTitle) loadingTitle.textContent = title || 'Processing Shipping Labels...';
-      if (loadingDesc) loadingDesc.textContent = desc || 'Scanning PDF pages and isolating thermal label boundaries.';
-      if (loadingStatus) loadingStatus.textContent = status || 'Reading vector data...';
-
-      if (loadingFilePill && loadingFileName) {
-        if (fileName) {
-          loadingFileName.textContent = fileName;
-          loadingFilePill.title = fileName;
-          loadingFilePill.style.display = 'inline-flex';
-        } else {
-          loadingFilePill.style.display = 'none';
-        }
-      }
-
-      if (loadingBar) {
-        loadingBar.style.animation = '';
-        loadingBar.style.width = '35%';
-      }
-    }
-    if (uploadArea) uploadArea.style.display = 'none';
-    if (resultCard) resultCard.style.display = 'none';
-  }
-
-  function updateLoadingProgress(statusText, percent) {
-    if (loadingStatus) loadingStatus.textContent = statusText;
-    if (loadingBar && typeof percent === 'number') {
-      loadingBar.style.animation = 'none';
-      loadingBar.style.width = `${Math.min(100, Math.max(8, percent))}%`;
-    }
-  }
-
-  function hideLoading() {
-    if (loadingState) loadingState.style.display = 'none';
-  }
-
-  // Error Card Action Listeners
+  // Initialize Error Card Listeners
   if (btnErrorRetry) {
     btnErrorRetry.addEventListener('click', () => {
-      hideError();
+      UI.hideError();
       if (fileInput) fileInput.click();
     });
   }
 
   if (btnErrorDismiss) {
     btnErrorDismiss.addEventListener('click', () => {
-      hideError();
+      UI.hideError();
     });
   }
 
-  // Drag & Drop
-  if (dropzone) {
-    dropzone.addEventListener('dragover', (e) => {
-      e.preventDefault();
-      dropzone.classList.add('dragover');
-    });
-
-    dropzone.addEventListener('dragleave', () => {
-      dropzone.classList.remove('dragover');
-    });
-
-    dropzone.addEventListener('drop', (e) => {
-      e.preventDefault();
-      dropzone.classList.remove('dragover');
-      if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-        loadSelectedFile(e.dataTransfer.files[0]);
-      }
-    });
-
-    dropzone.addEventListener('click', (e) => {
-      if (e.target.closest('button')) return;
-      fileInput.click();
-    });
-  }
-
+  // Setup Drag & Drop
+  UI.setupDropzone(dropzone, fileInput, (file) => loadSelectedFile(file));
   if (chooseFileBtn) chooseFileBtn.addEventListener('click', () => fileInput.click());
 
   if (fileInput) {
@@ -189,7 +79,7 @@
     });
   }
 
-  // Upload Another File
+  // Reset / Change File
   if (changeFileBtn) {
     changeFileBtn.addEventListener('click', () => {
       currentPdfBytes = null;
@@ -199,42 +89,29 @@
       isImageMode = false;
       currentLabelBox = FLIPKART_LABEL_BOX;
       if (fileInput) fileInput.value = '';
-      activeDocTitle = defaultDocTitle;
-      document.title = defaultDocTitle;
-      hideLoading();
-      hideError();
-      resultCard.style.display = 'none';
-      uploadArea.style.display = 'block';
+      UI.setActiveDocTitle(defaultDocTitle);
+      UI.hideLoading();
+      UI.hideError();
+      if (resultCard) resultCard.style.display = 'none';
+      if (uploadArea) uploadArea.style.display = 'block';
     });
   }
 
-  // Dynamic tab title visibility handler
-  document.addEventListener('visibilitychange', () => {
-    if (document.hidden) {
-      if (pagesMetadata && pagesMetadata.length > 0) {
-        document.title = `📦 (${pagesMetadata.length} Orders Ready) Print 4x6 Labels — QuickCrop`;
-      } else {
-        document.title = '⚡ Free 4x6 Shipping Label Cropper — QuickCrop';
-      }
-    } else {
-      document.title = activeDocTitle;
-    }
-  });
+  // Tab Title Visibility
+  UI.bindVisibilityTitle(() => (pagesMetadata ? pagesMetadata.length : 0), 'Flipkart');
 
-  // Determine file type and delegate with complete error validation
+  // Load and validate selected file
   async function loadSelectedFile(file) {
-    hideError();
+    UI.hideError();
     if (!file) return;
 
-    // Validate 0-byte or empty file
     if (file.size === 0) {
-      showError('Empty File Selected', 'The selected file has 0 bytes. Please ensure the file downloaded completely from Flipkart Seller Hub.');
+      UI.showError('Empty File Selected', 'The selected file has 0 bytes. Please ensure the file downloaded completely from Flipkart Seller Hub.');
       return;
     }
 
-    // Validate excessive file size (> 80MB)
     if (file.size > 80 * 1024 * 1024) {
-      showError('File Exceeds Size Limit', `The file is ${(file.size / (1024 * 1024)).toFixed(1)} MB. Flipkart shipping label files are normally under 15 MB.`);
+      UI.showError('File Exceeds Size Limit', `The file is ${(file.size / (1024 * 1024)).toFixed(1)} MB. Shipping label files are normally under 15 MB.`);
       return;
     }
 
@@ -248,7 +125,7 @@
         await processPdfBuffer(buffer, file.name);
       } catch (err) {
         console.error('File read error:', err);
-        showError('File Access Error', 'Could not read file from your device. Please try selecting the file again.');
+        UI.showError('File Access Error', 'Could not read file from your device. Please try selecting the file again.');
       }
     } else if (
       fileName.endsWith('.png') ||
@@ -260,54 +137,54 @@
       isImageMode = true;
       await processImageFile(file);
     } else {
-      showError(
+      UI.showError(
         'Unsupported File Format',
-        `"${file.name}" is not a supported format. Please upload an official Flipkart shipping label PDF (.pdf) or image (.png, .jpg, .webp).`
+        `"${file.name}" is not a supported format. Please upload an official shipping label PDF (.pdf) or image (.png, .jpg, .webp).`
       );
     }
   }
 
-  // Process PDF Buffer with Comprehensive Error Handling
+  // Process PDF Buffer
   async function processPdfBuffer(buffer, fileName) {
     try {
-      showLoading('Processing Shipping Labels...', 'Analyzing document pages and isolating shipping labels...', 'Reading PDF streams...', fileName);
+      UI.showLoading('Processing Shipping Labels...', 'Analyzing document pages and isolating shipping labels...', 'Reading PDF streams...', fileName);
 
       if (!buffer || buffer.byteLength === 0) {
-        showError('Empty PDF Document', 'The uploaded PDF file contains no data. Please re-download the label from Flipkart Seller Hub.');
+        UI.showError('Empty PDF Document', 'The uploaded PDF file contains no data. Please re-download the label from Seller Hub.');
         return;
       }
 
-      // Clone buffer so PDF.js worker transfer NEVER detaches currentPdfBytes!
+      // Clone buffer so worker transfer never detaches currentPdfBytes!
       const cleanBuffer = buffer.slice(0);
       currentPdfBytes = new Uint8Array(cleanBuffer);
       currentImageCropResult = null;
       isImageMode = false;
 
-      // Load with PDF.js using a separate clone
+      // Load with PDF.js
       const pdfJsBuffer = buffer.slice(0);
       try {
         currentPdfDocProxy = await loadPdfDoc(pdfJsBuffer);
       } catch (pdfJsErr) {
         console.error('PDF.js parse error:', pdfJsErr);
         if (pdfJsErr.name === 'PasswordException' || (pdfJsErr.message && pdfJsErr.message.toLowerCase().includes('password'))) {
-          showError('Password Protected PDF', 'This PDF is encrypted with a password. QuickCrop cannot process locked documents. Please remove the password or download the unencrypted label PDF directly from Flipkart.');
+          UI.showError('Password Protected PDF', 'This PDF is encrypted with a password. QuickCrop cannot process locked documents.');
           return;
         }
         if (pdfJsErr.name === 'InvalidPDFException' || (pdfJsErr.message && pdfJsErr.message.toLowerCase().includes('invalid pdf'))) {
-          showError('Corrupted PDF File', 'This file is corrupted or not a recognized PDF document. Please verify the file or re-download it from Flipkart Seller Hub.');
+          UI.showError('Corrupted PDF File', 'This file is corrupted or not a recognized PDF document.');
           return;
         }
-        showError('Unable to Open PDF', 'Failed to parse the PDF document: ' + (pdfJsErr.message || 'Unknown PDF error') + '. Please ensure this is a standard Flipkart shipping label PDF.');
+        UI.showError('Unable to Open PDF', 'Failed to parse the PDF document: ' + (pdfJsErr.message || 'Unknown PDF error'));
         return;
       }
 
       if (!currentPdfDocProxy || currentPdfDocProxy.numPages === 0) {
-        showError('Empty Document', 'The uploaded PDF document contains 0 pages.');
+        UI.showError('Empty Document', 'The uploaded PDF document contains 0 pages.');
         return;
       }
 
       const totalPages = currentPdfDocProxy.numPages;
-      updateLoadingProgress(`Reading 1 of ${totalPages} pages...`, 15);
+      UI.updateLoadingProgress(`Reading 1 of ${totalPages} pages...`, 15);
 
       // Auto-detect marketplace from page 1 text stream
       let isAmazonDoc = false;
@@ -326,22 +203,22 @@
         currentMarketplace = 'amazon';
         pagesMetadata = await parseAmazonPdfMetadata(currentPdfDocProxy, (current, total) => {
           const pct = Math.round(15 + (current / total) * 75);
-          updateLoadingProgress(`Scanning Amazon order ${current} of ${total}...`, pct);
+          UI.updateLoadingProgress(`Scanning Amazon order ${current} of ${total}...`, pct);
         });
       } else {
         currentMarketplace = 'flipkart';
         pagesMetadata = await parsePdfMetadata(currentPdfDocProxy, (current, total) => {
           const pct = Math.round(15 + (current / total) * 75);
-          updateLoadingProgress(`Scanning Flipkart order ${current} of ${total}...`, pct);
+          UI.updateLoadingProgress(`Scanning Flipkart order ${current} of ${total}...`, pct);
         });
       }
 
       if (!pagesMetadata || pagesMetadata.length === 0) {
-        showError('No Orders Detected', 'Could not detect any shipping orders in this PDF. Please ensure this is an official Flipkart or Amazon shipping label document.');
+        UI.showError('No Orders Detected', 'Could not detect any shipping orders in this PDF. Please ensure this is an official shipping label document.');
         return;
       }
 
-      // Automatically group and sort multi-order batches by SKU for consecutive packing
+      // Group & sort multi-order batches by SKU
       if (pagesMetadata.length > 1) {
         pagesMetadata.sort((a, b) => {
           const skuA = (a.sku || '').toLowerCase().trim();
@@ -355,7 +232,7 @@
 
       currentLabelBox = pagesMetadata.detectedBox || FLIPKART_LABEL_BOX;
 
-      updateLoadingProgress('Formatting thermal label preview...', 95);
+      UI.updateLoadingProgress('Formatting thermal label preview...', 95);
 
       // Update File Banner
       if (fileNameDisplay) {
@@ -370,31 +247,30 @@
         const isGrouped = pagesMetadata.length > 1;
         const brand = currentMarketplace === 'amazon' ? 'Amazon ' : 'Flipkart ';
         orderCountDisplay.textContent = `${pagesMetadata.length} ${brand}Order${pagesMetadata.length > 1 ? 's' : ''} Ready${isGrouped ? ' (Grouped by SKU)' : ''}`;
-        activeDocTitle = `✅ (${pagesMetadata.length} ${brand}Orders Ready) - QuickCrop`;
-        document.title = activeDocTitle;
+        UI.setActiveDocTitle(`✅ (${pagesMetadata.length} ${brand}Orders Ready) - QuickCrop`);
       }
 
       if (btnDownloadInvoices) btnDownloadInvoices.style.display = 'inline-flex';
       if (btnDownloadPng) btnDownloadPng.style.display = 'none';
 
-      hideLoading();
-      resultCard.style.display = 'block';
+      UI.hideLoading();
+      if (resultCard) resultCard.style.display = 'block';
 
       currentPage = 1;
       updatePaginationUI();
       renderCurrentPage();
 
-      resultCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      if (resultCard) resultCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
     } catch (err) {
       console.error('Processing error:', err);
-      showError('Error Processing PDF', (err.message || 'An unexpected error occurred while analyzing the PDF.') + ' Please verify the file and try again.');
+      UI.showError('Error Processing PDF', (err.message || 'An unexpected error occurred while analyzing the PDF.') + ' Please verify the file and try again.');
     }
   }
 
-  // Process Image File with Comprehensive Error Handling
+  // Process Image File
   async function processImageFile(file) {
     try {
-      showLoading('Processing Label Image...', 'Extracting Flipkart shipping label from image...', 'Cropping label...', file.name);
+      UI.showLoading('Processing Label Image...', 'Extracting Flipkart shipping label from image...', 'Cropping label...', file.name);
 
       const result = await cropFlipkartLabelImage(file);
       currentImageCropResult = result;
@@ -420,7 +296,6 @@
       if (btnDownloadInvoices) btnDownloadInvoices.style.display = 'none';
       if (btnDownloadPng) btnDownloadPng.style.display = 'inline-flex';
 
-      // Draw on preview canvas
       if (canvas) {
         canvas.width = result.width;
         canvas.height = result.height;
@@ -432,16 +307,18 @@
         orderMetaDisplay.textContent = '100% Cropped Shipping Label';
       }
 
-      hideLoading();
-      resultCard.style.display = 'block';
-      resultCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      UI.hideLoading();
+      if (resultCard) {
+        resultCard.style.display = 'block';
+        resultCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
     } catch (err) {
       console.error('Image crop error:', err);
-      showError('Image Processing Error', 'Could not crop the shipping label from this image: ' + (err.message || 'Image decode failed') + '. Please ensure the image clearly displays the Flipkart shipping label.');
+      UI.showError('Image Processing Error', 'Could not crop the shipping label from this image: ' + (err.message || 'Image decode failed'));
     }
   }
 
-  // Stepper
+  // Stepper Listeners
   if (prevPageBtn) {
     prevPageBtn.addEventListener('click', () => {
       if (currentPage > 1) {
@@ -474,7 +351,7 @@
     }
   }
 
-  // Render Cropped Label on Canvas
+  // Render Cropped Label on Canvas (Memory-optimized with shared offscreen canvas)
   async function renderCurrentPage() {
     if (isImageMode) return;
     if (!currentPdfDocProxy || !canvas) return;
@@ -487,6 +364,10 @@
     }
 
     try {
+      if (!sharedOffscreenCanvas) {
+        sharedOffscreenCanvas = document.createElement('canvas');
+      }
+
       if (currentMarketplace === 'amazon') {
         const sourcePageNum = typeof meta.sourcePageIndex === 'number' ? meta.sourcePageIndex + 1 : currentPage;
         const page = await currentPdfDocProxy.getPage(sourcePageNum);
@@ -494,7 +375,7 @@
         const a4Height = viewport.height || 841.89;
         const previewScale = 2.0;
 
-        const offscreen = document.createElement('canvas');
+        const offscreen = sharedOffscreenCanvas;
         const offCtx = offscreen.getContext('2d');
         const renderViewport = page.getViewport({ scale: previewScale });
 
@@ -526,7 +407,6 @@
 
         ctx.drawImage(offscreen, srcX, srcY, srcW, srcH, destX, destY, destW, destH);
 
-        // Draw SKU stamp overlay
         if (meta.sku && meta.sku !== 'General Item') {
           ctx.fillStyle = '#000000';
           ctx.font = 'bold 13px Inter, sans-serif';
@@ -542,7 +422,7 @@
         const a4Height = 841.89;
         const cropScale = 1.6;
 
-        const offscreen = document.createElement('canvas');
+        const offscreen = sharedOffscreenCanvas;
         const offCtx = offscreen.getContext('2d');
         const viewport = page.getViewport({ scale: cropScale });
 
@@ -551,7 +431,8 @@
 
         await page.render({ canvasContext: offCtx, viewport }).promise;
 
-        const { x, y, width: cw, height: ch } = currentLabelBox || FLIPKART_LABEL_BOX;
+        const activeBox = (meta && meta.labelBox) ? meta.labelBox : (currentLabelBox || FLIPKART_LABEL_BOX);
+        const { x, y, width: cw, height: ch } = activeBox;
 
         canvas.width = Math.round(cw * cropScale);
         canvas.height = Math.round(ch * cropScale);
@@ -575,7 +456,26 @@
     return pagesMetadata.map((p) => p.pageIndex);
   }
 
-  // Download Cropped Shipping Labels (PDF) - Handles both top and bottom buttons
+  // Generate Cropped PDF Bytes
+  async function generateCroppedPdfBytes() {
+    if (isImageMode && currentImageCropResult) {
+      return currentImageCropResult.pdfBytes;
+    } else if (currentMarketplace === 'amazon') {
+      return await cropAmazonShippingLabels(currentPdfBytes, {
+        orders: pagesMetadata,
+        stampSku: true,
+      });
+    } else {
+      const pageIndices = getPageIndices();
+      return await cropFlipkartShippingLabels(currentPdfBytes, {
+        selectedPages: pageIndices,
+        orders: pagesMetadata,
+        labelBox: currentLabelBox,
+      });
+    }
+  }
+
+  // Download Cropped Shipping Labels (PDF)
   async function executeDownloadPdf() {
     if (!currentPdfBytes) return;
 
@@ -587,29 +487,19 @@
     });
 
     try {
-      let outputBytes;
       let downloadFileName = `Cropped_Labels_${Date.now()}.pdf`;
       let confettiColors = ['#2874F0', '#FFE500', '#FB641B'];
 
-      if (isImageMode && currentImageCropResult) {
-        outputBytes = currentImageCropResult.pdfBytes;
+      if (isImageMode) {
         downloadFileName = `Cropped_Label_${Date.now()}.pdf`;
       } else if (currentMarketplace === 'amazon') {
-        outputBytes = await cropAmazonShippingLabels(currentPdfBytes, {
-          orders: pagesMetadata,
-          stampSku: true,
-        });
         downloadFileName = `Amazon_Cropped_Labels_${Date.now()}.pdf`;
         confettiColors = ['#FF9900', '#131921', '#232F3E', '#FFFFFF'];
       } else {
-        const pageIndices = getPageIndices();
-        outputBytes = await cropFlipkartShippingLabels(currentPdfBytes, {
-          selectedPages: pageIndices,
-          labelBox: currentLabelBox,
-        });
         downloadFileName = `Flipkart_Cropped_Labels_${Date.now()}.pdf`;
       }
 
+      const outputBytes = await generateCroppedPdfBytes();
       const blob = new Blob([outputBytes], { type: 'application/pdf' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -634,7 +524,7 @@
       }
     } catch (err) {
       console.error(err);
-      showToast('Error cropping PDF: ' + err.message, 'error');
+      UI.showToast('Error cropping PDF: ' + err.message, 'error');
     } finally {
       buttons.forEach((btn) => {
         btn.disabled = false;
@@ -648,58 +538,11 @@
   if (btnDownloadPdf) btnDownloadPdf.addEventListener('click', executeDownloadPdf);
   if (btnTopDownloadPdf) btnTopDownloadPdf.addEventListener('click', executeDownloadPdf);
 
-  // Direct Print
+  // Direct Print using QuickCropUI performDirectPrint (Memory Leak Free)
   if (btnDirectPrint) {
-    btnDirectPrint.addEventListener('click', async () => {
+    btnDirectPrint.addEventListener('click', () => {
       if (!currentPdfBytes) return;
-
-      btnDirectPrint.disabled = true;
-      const origText = btnDirectPrint.innerHTML;
-      btnDirectPrint.innerHTML = `<span>⏳ Preparing Print...</span>`;
-
-      try {
-        let outputBytes;
-        if (isImageMode && currentImageCropResult) {
-          outputBytes = currentImageCropResult.pdfBytes;
-        } else if (currentMarketplace === 'amazon') {
-          outputBytes = await cropAmazonShippingLabels(currentPdfBytes, {
-            orders: pagesMetadata,
-            stampSku: true,
-          });
-        } else {
-          const pageIndices = getPageIndices();
-          outputBytes = await cropFlipkartShippingLabels(currentPdfBytes, {
-            selectedPages: pageIndices,
-            labelBox: currentLabelBox,
-          });
-        }
-
-        const blob = new Blob([outputBytes], { type: 'application/pdf' });
-        const blobUrl = URL.createObjectURL(blob);
-
-        const printIframe = document.createElement('iframe');
-        printIframe.style.position = 'fixed';
-        printIframe.style.right = '0';
-        printIframe.style.bottom = '0';
-        printIframe.style.width = '0';
-        printIframe.style.height = '0';
-        printIframe.style.border = '0';
-        printIframe.src = blobUrl;
-
-        printIframe.onload = () => {
-          btnDirectPrint.disabled = false;
-          btnDirectPrint.innerHTML = origText;
-          printIframe.contentWindow.focus();
-          printIframe.contentWindow.print();
-        };
-
-        document.body.appendChild(printIframe);
-      } catch (err) {
-        console.error(err);
-        showToast('Could not start direct print: ' + err.message + '. Please use "Download 4x6 PDF" instead.', 'error');
-        btnDirectPrint.disabled = false;
-        btnDirectPrint.innerHTML = origText;
-      }
+      UI.performDirectPrint(generateCroppedPdfBytes, btnDirectPrint, 'Labels');
     });
   }
 
@@ -744,7 +587,7 @@
         }, 40000);
       } catch (err) {
         console.error(err);
-        showToast('Error extracting invoices: ' + err.message, 'error');
+        UI.showToast('Error extracting invoices: ' + err.message, 'error');
       } finally {
         btnDownloadInvoices.disabled = false;
         btnDownloadInvoices.innerHTML = origText;

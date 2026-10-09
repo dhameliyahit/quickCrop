@@ -3,7 +3,7 @@
  * Provides offline caching, lightning-fast loads, and PWA installability.
  */
 
-const CACHE_NAME = 'quickcrop-v16';
+const CACHE_NAME = 'quickcrop-v25';
 const isLocalhost = Boolean(
   self.location.hostname === 'localhost' ||
   self.location.hostname === '[::1]' ||
@@ -27,6 +27,7 @@ const PRECACHE_ASSETS = [
   '/blogs/amazon-easy-ship-label-size-and-thermal-printer-settings/',
   '/blogs/how-to-separate-amazon-tax-invoices-and-shipping-labels/',
   '/css/style.css',
+  '/js/ui-controller.js',
   '/js/app.js',
   '/js/amazon-app.js',
   '/js/pdf-cropper.js',
@@ -46,8 +47,15 @@ const PRECACHE_ASSETS = [
   '/manifest.webmanifest'
 ];
 
-// Install Event: Precache core app shell
+// Install Event: Precache core app shell (disabled on localhost for live development)
 self.addEventListener('install', (event) => {
+  if (isLocalhost) {
+    self.skipWaiting();
+    event.waitUntil(
+      caches.keys().then((keys) => Promise.all(keys.map((k) => caches.delete(k))))
+    );
+    return;
+  }
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
       return cache.addAll(PRECACHE_ASSETS).catch((err) => {
@@ -59,6 +67,14 @@ self.addEventListener('install', (event) => {
 
 // Activate Event: Clean up old caches & claim clients immediately
 self.addEventListener('activate', (event) => {
+  if (isLocalhost) {
+    event.waitUntil(
+      caches.keys().then((keys) => Promise.all(keys.map((k) => caches.delete(k))))
+        .then(() => self.registration.unregister())
+        .then(() => self.clients.claim())
+    );
+    return;
+  }
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
@@ -79,10 +95,10 @@ self.addEventListener('fetch', (event) => {
   // Only handle GET requests
   if (request.method !== 'GET') return;
 
-  // On localhost or during development, bypass cache for same-origin requests
+  // On localhost or during development, completely bypass cache and fetch fresh network resource
   if (isLocalhost) {
     event.respondWith(
-      fetch(request).catch(() => caches.match(request))
+      fetch(request, { cache: 'no-store' }).catch(() => fetch(request))
     );
     return;
   }

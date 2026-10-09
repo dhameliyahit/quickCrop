@@ -24,8 +24,7 @@ async function loadPdfDoc(arrayBuffer) {
 async function parsePdfMetadata(pdfDoc, onProgress) {
   const pagesData = [];
   const numPages = pdfDoc.numPages;
-  // Default to standard right-aligned Flipkart layout (matches user red box)
-  let detectedBox = { x: 165, y: 460, width: 265, height: 360 };
+  let lastDetectedBox = { x: 165, y: 460, width: 265, height: 360 };
 
   for (let i = 1; i <= numPages; i++) {
     if (typeof onProgress === 'function') {
@@ -36,17 +35,20 @@ async function parsePdfMetadata(pdfDoc, onProgress) {
     const textItems = textContent.items.map((item) => item.str);
     const fullText = textItems.join(' ');
 
-    // Detect label position from top-half header text coordinates
+    let pageBox = { ...lastDetectedBox };
+
+    // Detect label position per page from top-half header text coordinates
     for (const item of textContent.items) {
       if (item.transform && item.transform[5] > 400) {
         const str = item.str.trim();
         const tx = item.transform[4];
         if (/^(STD|SURFACE|E-Kart|COD|PREPAID|Ordered\s*through)$/i.test(str)) {
           if (tx > 100) {
-            detectedBox = { x: 165, y: 460, width: 265, height: 360 };
+            pageBox = { x: 165, y: 460, width: 265, height: 360 };
           } else if (tx < 80) {
-            detectedBox = { x: 15, y: 460, width: 265, height: 360 };
+            pageBox = { x: 15, y: 460, width: 265, height: 360 };
           }
+          lastDetectedBox = pageBox;
           break;
         }
       }
@@ -98,11 +100,12 @@ async function parsePdfMetadata(pdfDoc, onProgress) {
       courier,
       sku,
       paymentMode,
+      labelBox: pageBox,
       selected: true,
     });
   }
 
-  pagesData.detectedBox = detectedBox;
+  pagesData.detectedBox = lastDetectedBox;
   return pagesData;
 }
 
@@ -137,23 +140,19 @@ async function parseAmazonPdfMetadata(pdfDoc, onProgress) {
     const items = textContent.items;
     const fullText = items.map((it) => it.str).join(' ');
 
-    const hasLabelText = /AWB|SHIP\s*TO|DELIVERY\s*STATION|ATSPL|COD|PREPAID|SURFACE|STANDARD|Amazon\s*Easy\s*Ship|Return\s*Address|Courier/i.test(fullText);
-    const hasInvoiceText = /Tax\s*Invoice|Invoice\s*Number|GSTIN|HSN|Sold\s*By|Bill\s*To|Billing\s*Address|Invoice\s*Date|Unit\s*Price|Authorized\s*Signatory|Total\s*Amount/i.test(fullText);
+    const hasLabelText = /\bAWB\b|DELIVERY\s*STATION|\bATSPL\b|\bSTVT\b|\bBOX\s*\d+\s*of\s*\d+/i.test(fullText);
+    const hasInvoiceHeader = /Tax\s*Invoice|Invoice\s*Number|GSTIN|Sold\s*By|Billing\s*Address|Authorized\s*Signatory|Amount\s*in\s*Words/i.test(fullText);
 
-    // Also check left vs right distribution (for 2-on-1 sheets)
+    // Check left vs right distribution (for 2-on-1 sheets)
     const leftItems = items.filter((it) => !it.transform || it.transform[4] < midX + 15);
     const rightItems = items.filter((it) => !it.transform || it.transform[4] >= midX - 15);
     const leftText = leftItems.map((it) => it.str).join(' ');
     const rightText = rightItems.map((it) => it.str).join(' ');
 
-    const isLeftLabel = /AWB|Order|Ship|STVT|ATSPL|SUR|COD|PREPAID|Customer|Declaration|amazon|BOX/i.test(leftText);
-    const isRightInvoice = /Invoice|GSTIN|Sold\s*By|Order\s*Number|HSN|Unit\s*Price|Total|Tax/i.test(rightText);
+    const isLeftLabel = /\bAWB\b|Order|Ship|STVT|ATSPL|SUR|COD|PREPAID|Customer|Declaration|BOX/i.test(leftText);
+    const isRightInvoice = /Tax\s*Invoice|Billing\s*Address|Authorized\s*Signatory|Amount\s*in\s*Words|Place\s*of\s*supply/i.test(rightText);
 
-    // A split sheet has page width > 500pt and contains both shipping label and tax invoice text
-    const isSplitSheet = pageW > 500 && (
-      (isLeftLabel && isRightInvoice) ||
-      (hasLabelText && hasInvoiceText)
-    );
+    const isSplitSheet = pageW > 500 && isLeftLabel && isRightInvoice;
 
     pagesInfo.push({
       pageNum,
@@ -167,30 +166,35 @@ async function parseAmazonPdfMetadata(pdfDoc, onProgress) {
       leftText,
       rightText,
       hasLabelText,
-      hasInvoiceText,
+      hasInvoiceHeader,
       isLeftLabel,
       isRightInvoice,
       isSplitSheet,
     });
   }
 
-  // 2. Multi-page Amazon / Thermal PDF Handling
-  // Alternating format ONLY applies when pages are NOT split sheets!
+  // 2. Multi-page Amazon Alternating PDF Handling (Odd pages 1, 3, 5 = Labels, Even pages 2, 4, 6 = Invoices)
   let isAlternatingFormat = false;
-  const hasSplitSheets = pagesInfo.some((p) => p.isSplitSheet);
 
-  if (!hasSplitSheets && numPages >= 2) {
-    let oddPagesLookLikeLabels = false;
-    let evenPagesLookLikeInvoices = false;
-    for (let i = 0; i < numPages; i += 2) {
-      if (pagesInfo[i] && pagesInfo[i].hasLabelText) {
-        oddPagesLookLikeLabels = true;
-      }
-      if (pagesInfo[i + 1] && pagesInfo[i + 1].hasInvoiceText) {
-        evenPagesLookLikeInvoices = true;
-      }
+  if (numPages >= 2) {
+    let oddLabelCount = 0;
+    let evenInvoiceCount = 0;
+    const pairCount = Math.floor(numPages / 2);
+
+    for (let k = 0; k < pairCount; k++) {
+      const pOdd = pagesInfo[k * 2];       // Page 1, 3, 5...
+      const pEven = pagesInfo[k * 2 + 1];  // Page 2, 4, 6...
+
+      if (!pOdd || !pEven) continue;
+
+      const oddHasLabel = pOdd.hasLabelText || /AWB|Order|Ship|STVT|ATSPL|SUR|COD|PREPAID|Customer|Declaration|BOX|BOT3|CTCD|NCTD|NCRU|MMND/i.test(pOdd.fullText);
+      const evenHasInvoice = /Tax\s*Invoice|Invoice\s*Number|GSTIN|HSN|Sold\s*By|Bill\s*To|Billing\s*Address|Invoice\s*Date|Unit\s*Price|Authorized\s*Signatory|Total\s*Amount|Dynamic\s*QR\s*Code|PAN\s*No|Amount\s*in\s*Words|Place\s*of\s*supply/i.test(pEven.fullText);
+
+      if (oddHasLabel) oddLabelCount++;
+      if (evenHasInvoice) evenInvoiceCount++;
     }
-    if (oddPagesLookLikeLabels && evenPagesLookLikeInvoices) {
+
+    if (oddLabelCount >= Math.ceil(pairCount / 2) && evenInvoiceCount >= Math.ceil(pairCount / 2)) {
       isAlternatingFormat = true;
     }
   }
