@@ -508,9 +508,10 @@
       ctx.fillStyle = '#FFFFFF';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      if (order.labelBox) {
-        // Extract coordinates from order.labelBox
-        const box = order.labelBox;
+      const box = order.labelBox || (viewport.width > 500 ? AMAZON_LABEL_BOX_2UP_TOP : null);
+
+      if (box) {
+        // Extract coordinates from box
         const cropW = box.width;
         const cropH = box.height;
 

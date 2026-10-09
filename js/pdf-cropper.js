@@ -269,9 +269,10 @@ async function cropAmazonShippingLabels(pdfBytes, options = {}) {
 
       const page = outDoc.addPage([AMAZON_THERMAL_PAGE.width, AMAZON_THERMAL_PAGE.height]);
 
-      if (order.labelBox) {
+      const box = order.labelBox || (srcW > 500 ? AMAZON_LABEL_BOX_2UP_TOP : null);
+
+      if (box) {
         // Bounding box cropping (e.g. 2-up split sheet)
-        const box = order.labelBox;
         const embeddedPage = await outDoc.embedPage(srcPage, {
           left: box.x,
           bottom: box.y,
@@ -312,7 +313,7 @@ async function cropAmazonShippingLabels(pdfBytes, options = {}) {
           });
         }
       } else {
-        // Full page label (e.g. Odd page from alternating 2-page-per-order PDF or 4x6 label)
+        // 4x6 Direct Thermal page (already 4x6 thermal dimensions)
         const embeddedPage = await outDoc.embedPage(srcPage);
         const margin = 6;
         const availW = AMAZON_THERMAL_PAGE.width - margin * 2;
@@ -331,14 +332,13 @@ async function cropAmazonShippingLabels(pdfBytes, options = {}) {
           height: drawH,
         });
 
-        // Stamp SKU & Quantity inside the blank whitespace right above the bottom routing box (matches crp-amz.png)
+        // Stamp SKU & Quantity inside the blank whitespace right above the bottom routing box
         if (stampSku && boldFont && order.sku && order.sku !== 'Amazon Item' && order.sku !== 'General Item' && order.sku !== 'Amazon Order') {
           const qty = order.qty || 1;
           const stampText = `${order.sku} | Qty - ${qty}`;
           const maxLen = 42;
           const displayText = stampText.length > maxLen ? stampText.substring(0, maxLen - 1) + '…' : stampText;
 
-          // Exact placement: in the white gap above STXA routing boxes
           const stampX = Math.round(drawX + drawW * 0.14);
           const stampY = Math.round(drawY + drawH * 0.165);
 
