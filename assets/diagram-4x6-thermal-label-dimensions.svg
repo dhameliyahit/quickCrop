@@ -1,0 +1,154 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 520" width="100%" height="auto" style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F8FAFC"/>
+      <stop offset="100%" stop-color="#F1F5F9"/>
+    </linearGradient>
+    <linearGradient id="labelGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF"/>
+      <stop offset="100%" stop-color="#FAFAFA"/>
+    </linearGradient>
+    <filter id="shadow" x="-5%" y="-5%" width="110%" height="115%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="6" stdDeviation="8" flood-color="#0F172A" flood-opacity="0.08"/>
+    </filter>
+  </defs>
+
+  <!-- Background Canvas -->
+  <rect width="800" height="520" rx="16" fill="url(#bgGrad)" stroke="#E2E8F0" stroke-width="2"/>
+
+  <!-- Title Badge & Header -->
+  <rect x="40" y="28" width="150" height="26" rx="13" fill="#EFF6FF" stroke="#BFDBFE"/>
+  <text x="115" y="45" font-size="12" font-weight="700" fill="#1D4ED8" text-anchor="middle">TECHNICAL SPECIFICATION</text>
+  <text x="40" y="80" font-size="22" font-weight="800" fill="#0F172A">Standard 4×6" Thermal Shipping Label Anatomy</text>
+  <text x="40" y="102" font-size="13" fill="#64748B">Standard layout dimensions for Flipkart (Ekart), Amazon Easy Ship (ATS), and Delhivery</text>
+
+  <!-- 4x6 Label Representation (Centered) -->
+  <g transform="translate(180, 125)">
+    <!-- Dimension Arrows: Width -->
+    <line x1="0" y1="-20" x2="280" y2="-20" stroke="#2563EB" stroke-width="2"/>
+    <polygon points="0,-20 8,-24 8,-16" fill="#2563EB"/>
+    <polygon points="280,-20 272,-24 272,-16" fill="#2563EB"/>
+    <rect x="90" y="-32" width="100" height="22" rx="4" fill="#2563EB"/>
+    <text x="140" y="-17" font-size="11" font-weight="700" fill="#FFFFFF" text-anchor="middle">100 mm (4.00 in)</text>
+
+    <!-- Dimension Arrows: Height -->
+    <line x1="-20" y1="0" x2="-20" y2="350" stroke="#2563EB" stroke-width="2"/>
+    <polygon points="-20,0 -24,8 -16,8" fill="#2563EB"/>
+    <polygon points="-20,350 -24,342 -16,342" fill="#2563EB"/>
+    <rect x="-85" y="163" width="60" height="24" rx="4" fill="#2563EB"/>
+    <text x="-55" y="179" font-size="11" font-weight="700" fill="#FFFFFF" text-anchor="middle">150 mm</text>
+    <text x="-55" y="196" font-size="9" fill="#64748B" text-anchor="middle">(6.00 in)</text>
+
+    <!-- Label Body -->
+    <rect x="0" y="0" width="280" height="350" rx="8" fill="url(#labelGrad)" stroke="#CBD5E1" stroke-width="2" filter="url(#shadow)"/>
+
+    <!-- Quiet Zones Left & Right -->
+    <rect x="0" y="0" width="14" height="350" fill="#FEF3C7" opacity="0.4"/>
+    <rect x="266" y="0" width="14" height="350" fill="#FEF3C7" opacity="0.4"/>
+    <line x1="14" y1="0" x2="14" y2="350" stroke="#F59E0B" stroke-dasharray="3,3" stroke-width="1.5"/>
+    <line x1="266" y1="0" x2="266" y2="350" stroke="#F59E0B" stroke-dasharray="3,3" stroke-width="1.5"/>
+
+    <!-- Simulated Shipping Label Content -->
+    <!-- Marketplace Header -->
+    <rect x="22" y="16" width="70" height="18" rx="3" fill="#2874F0"/>
+    <text x="57" y="29" font-size="9" font-weight="800" fill="#FFFFFF" text-anchor="middle">EKART LOGISTICS</text>
+    <rect x="190" y="16" width="68" height="18" rx="3" fill="#F1F5F9" stroke="#E2E8F0"/>
+    <text x="224" y="29" font-size="9" font-weight="700" fill="#0F172A" text-anchor="middle">PREPAID</text>
+
+    <!-- Barcode Box (Vector representation) -->
+    <rect x="22" y="45" width="236" height="60" rx="4" fill="#F8FAFC" stroke="#E2E8F0"/>
+    <!-- Simulated 1D Barcode lines -->
+    <g transform="translate(32, 53)">
+      <rect x="0" y="0" width="3" height="32" fill="#0F172A"/>
+      <rect x="6" y="0" width="1.5" height="32" fill="#0F172A"/>
+      <rect x="11" y="0" width="4" height="32" fill="#0F172A"/>
+      <rect x="18" y="0" width="2" height="32" fill="#0F172A"/>
+      <rect x="23" y="0" width="5" height="32" fill="#0F172A"/>
+      <rect x="31" y="0" width="1.5" height="32" fill="#0F172A"/>
+      <rect x="36" y="0" width="3" height="32" fill="#0F172A"/>
+      <rect x="42" y="0" width="6" height="32" fill="#0F172A"/>
+      <rect x="51" y="0" width="2" height="32" fill="#0F172A"/>
+      <rect x="56" y="0" width="3.5" height="32" fill="#0F172A"/>
+      <rect x="63" y="0" width="1.5" height="32" fill="#0F172A"/>
+      <rect x="68" y="0" width="4.5" height="32" fill="#0F172A"/>
+      <rect x="76" y="0" width="2" height="32" fill="#0F172A"/>
+      <rect x="81" y="0" width="3" height="32" fill="#0F172A"/>
+      <rect x="88" y="0" width="5" height="32" fill="#0F172A"/>
+      <rect x="96" y="0" width="1.5" height="32" fill="#0F172A"/>
+      <rect x="101" y="0" width="3" height="32" fill="#0F172A"/>
+      <rect x="108" y="0" width="4" height="32" fill="#0F172A"/>
+      <rect x="115" y="0" width="2" height="32" fill="#0F172A"/>
+      <rect x="120" y="0" width="5" height="32" fill="#0F172A"/>
+      <rect x="128" y="0" width="2" height="32" fill="#0F172A"/>
+      <rect x="133" y="0" width="3.5" height="32" fill="#0F172A"/>
+      <rect x="140" y="0" width="1.5" height="32" fill="#0F172A"/>
+      <rect x="145" y="0" width="4" height="32" fill="#0F172A"/>
+      <rect x="152" y="0" width="2" height="32" fill="#0F172A"/>
+      <rect x="157" y="0" width="5" height="32" fill="#0F172A"/>
+      <rect x="165" y="0" width="3" height="32" fill="#0F172A"/>
+      <rect x="171" y="0" width="2" height="32" fill="#0F172A"/>
+      <rect x="176" y="0" width="4" height="32" fill="#0F172A"/>
+      <rect x="183" y="0" width="1.5" height="32" fill="#0F172A"/>
+      <rect x="188" y="0" width="3.5" height="32" fill="#0F172A"/>
+      <rect x="195" y="0" width="2" height="32" fill="#0F172A"/>
+      <rect x="200" y="0" width="4" height="32" fill="#0F172A"/>
+      <rect x="207" y="0" width="2" height="32" fill="#0F172A"/>
+      <rect x="212" y="0" width="3" height="32" fill="#0F172A"/>
+    </g>
+    <text x="140" y="98" font-size="9" font-family="monospace" font-weight="700" fill="#334155" text-anchor="middle">FMPC2948194029IN</text>
+
+    <!-- Address / Routing Details -->
+    <rect x="22" y="115" width="236" height="90" rx="4" fill="#FFFFFF" stroke="#E2E8F0"/>
+    <text x="32" y="132" font-size="9" font-weight="700" fill="#0F172A">DELIVERY ADDRESS (DESTINATION)</text>
+    <text x="32" y="147" font-size="9" fill="#475569">Customer: Amit Sharma</text>
+    <text x="32" y="160" font-size="8.5" fill="#64748B">Plot 42, Green Park Society, Ring Road</text>
+    <text x="32" y="173" font-size="9" font-weight="700" fill="#0F172A">SURAT, GUJARAT - 395007</text>
+    <text x="32" y="188" font-size="8.5" fill="#475569">Routing Hub: ST/SRT/HUB-04 [S-EXPRESS]</text>
+
+    <!-- Product / SKU / Quantity Line (QuickCrop Feature) -->
+    <rect x="22" y="215" width="236" height="50" rx="4" fill="#F0FDF4" stroke="#86EFAC"/>
+    <text x="32" y="232" font-size="9" font-weight="700" fill="#166534">ITEM SKU &amp; PACKING DETAILS</text>
+    <text x="32" y="247" font-size="9" font-weight="700" fill="#0F172A">SKU: COT-KURTI-NAVY-L  |  QTY: 1</text>
+    <text x="32" y="258" font-size="8" fill="#15803D">Auto-stamped by QuickCrop for faster picking</text>
+
+    <!-- Return Address & Dispatch Hub -->
+    <rect x="22" y="275" width="236" height="55" rx="4" fill="#F8FAFC" stroke="#E2E8F0"/>
+    <text x="32" y="291" font-size="8.5" font-weight="700" fill="#475569">SELLER RETURN ADDRESS:</text>
+    <text x="32" y="304" font-size="8" fill="#64748B">Shree Radhe Textiles, Surat, Gujarat</text>
+    <text x="32" y="316" font-size="8" fill="#64748B">GSTIN: 24AAACS1234F1Z5 • Courier: Ekart Surface</text>
+  </g>
+
+  <!-- Side Callout Annotations -->
+  <g transform="translate(500, 130)">
+    <!-- Callout 1: Quiet Zones -->
+    <rect x="0" y="0" width="260" height="90" rx="8" fill="#FFFFFF" stroke="#FDE68A" stroke-width="1.5"/>
+    <circle cx="20" cy="22" r="10" fill="#FEF3C7"/>
+    <text x="20" y="26" font-size="11" font-weight="800" fill="#92400E" text-anchor="middle">1</text>
+    <text x="38" y="25" font-size="12" font-weight="700" fill="#92400E">Barcode Quiet Zones (5 mm)</text>
+    <text x="14" y="48" font-size="11" fill="#475569">Keep 5 mm blank margin on left &amp; right</text>
+    <text x="14" y="65" font-size="11" fill="#475569">so courier PDA lasers can detect start</text>
+    <text x="14" y="80" font-size="11" fill="#475569">and stop characters reliably.</text>
+
+    <!-- Callout 2: 203 vs 300 DPI -->
+    <rect x="0" y="105" width="260" height="90" rx="8" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1.5"/>
+    <circle cx="20" cy="127" r="10" fill="#EFF6FF"/>
+    <text x="20" y="131" font-size="11" font-weight="800" fill="#1D4ED8" text-anchor="middle">2</text>
+    <text x="38" y="130" font-size="12" font-weight="700" fill="#1D4ED8">Direct Thermal Resolution</text>
+    <text x="14" y="153" font-size="11" fill="#475569">Standard printers run at 203 DPI</text>
+    <text x="14" y="170" font-size="11" fill="#475569">(812 × 1218 pixels). Vector PDF paths</text>
+    <text x="14" y="185" font-size="11" fill="#475569">prevent pixel smudging on 4×6 rolls.</text>
+
+    <!-- Callout 3: Zero-Margin Setup -->
+    <rect x="0" y="210" width="260" height="95" rx="8" fill="#FFFFFF" stroke="#BBF7D0" stroke-width="1.5"/>
+    <circle cx="20" cy="232" r="10" fill="#DCFCE7"/>
+    <text x="20" y="236" font-size="11" font-weight="800" fill="#15803D" text-anchor="middle">3</text>
+    <text x="38" y="235" font-size="12" font-weight="700" fill="#15803D">Actual Size (100% Scale)</text>
+    <text x="14" y="258" font-size="11" fill="#475569">Always select 100% Actual Size in</text>
+    <text x="14" y="275" font-size="11" fill="#475569">the print dialog. Never use "Fit to Page"</text>
+    <text x="14" y="292" font-size="11" fill="#475569">which compresses barcodes by 4-7%.</text>
+  </g>
+
+  <!-- Bottom Tip -->
+  <rect x="40" y="475" width="720" height="30" rx="6" fill="#F1F5F9" stroke="#E2E8F0"/>
+  <text x="400" y="494" font-size="11.5" fill="#334155" text-anchor="middle">💡 Tip: QuickCrop automatically applies these exact vector boundary coordinates for Flipkart and Amazon Easy Ship batches.</text>
+</svg>
